@@ -103,13 +103,17 @@ function findTodayRow(rows) {
  *****************************************************/
 
 function renderData(eventData) {
-  console.log("Rendering event data:", eventData);
+  const eventName = eventData["Event Name"] || "(No event name)";
+  const guestCount = eventData["Guest Count"] || "0";
+  const departureTime = eventData["Departure Time"] || "TBD";
+  const endTime = eventData["Event Conclusion/Breakdown Time"] || "TBD"; // fixed here
 
-  document.getElementById("eventNameValue").textContent = eventData["Event Name"] || "(No event name)";
-  document.getElementById("guestCountValue").textContent = eventData["Guest Count"] || "0";
-  document.getElementById("departureTimeValue").textContent = eventData["Departure Time"] || "TBD";
-  document.getElementById("endTimeValue").textContent = eventData["Event Conclusion/Breakdown Time"] || "TBD";
+  document.getElementById("eventNameValue").textContent = eventName;
+  document.getElementById("guestCountValue").textContent = guestCount;
+  document.getElementById("departureTimeValue").textContent = departureTime;
+  document.getElementById("endTimeValue").textContent = endTime;
 }
+
 
 /*****************************************************
  * MAIN INIT
