@@ -23,24 +23,50 @@ async function fetchCSV() {
 }
 
 function parseCSV(csvText) {
-  const lines = csvText.trim().split("\n");
-  const headers = lines[0].split(",").map(h => h.trim());
-  const dataRows = [];
+  const rows = [];
+  let insideQuotes = false;
+  let row = [];
+  let cell = '';
 
-  for (let i = 1; i < lines.length; i++) {
-    if (!lines[i]) continue;
-    const cells = lines[i].split(",");
-    const rowObj = {};
-    headers.forEach((header, idx) => {
-      rowObj[header] = (cells[idx] || "").trim();
-    });
-    dataRows.push(rowObj);
+  for (let i = 0; i < csvText.length; i++) {
+    const char = csvText[i];
+    
+    if (char === '"' && csvText[i + 1] === '"') { 
+      cell += '"';  // Handle escaped quotes ("" -> ")
+      i++;
+    } else if (char === '"') {
+      insideQuotes = !insideQuotes;  // Toggle quotes flag
+    } else if (char === ',' && !insideQuotes) {
+      row.push(cell.trim());
+      cell = '';
+    } else if (char === '\n' && !insideQuotes) {
+      row.push(cell.trim());
+      rows.push(row);
+      row = [];
+      cell = '';
+    } else {
+      cell += char;
+    }
   }
-  return dataRows;
+  
+  if (row.length > 0) {
+    rows.push(row);
+  }
+
+  // Convert array to objects using headers
+  const headers = rows[0];
+  return rows.slice(1).map(row => {
+    let obj = {};
+    headers.forEach((header, idx) => {
+      obj[header] = row[idx] || "";
+    });
+    return obj;
+  });
 }
 
+
 /*****************************************************
- * HELPER: Today in MM/DD/YYYY
+ * HELPER: Today in m/d/yyyy
  *****************************************************/
 
 function getTodayInmdyyyy() {
@@ -48,7 +74,7 @@ function getTodayInmdyyyy() {
   const mm = String(today.getMonth() + 1).padStart(2, '0'); // e.g. '03'
   const dd = String(today.getDate()).padStart(2, '0');      // e.g. '19'
   const yyyy = today.getFullYear();
-  return `${m}/${d}/${yyyy}`; // e.g. '03/19/2025'
+  return `${m}/${d}/${yyyy}`; // e.g. '3/19/2025'
 }
 
 /*****************************************************
