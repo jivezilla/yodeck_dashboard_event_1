@@ -85,7 +85,7 @@ function findTodayRow(rows) {
   console.log("Today's date for filtering:", todayStr);
 
   // Filter to get all rows matching today's date.
-  const matchingRows = rows.filter(r => r["Event Date"] === todayStr);
+  const matchingRows = rows.filter(r => r["Date"]?.trim() === todayStr);
 
   // Log matching rows for debugging
   console.log("Matching rows found:", matchingRows);
