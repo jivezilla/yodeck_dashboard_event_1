@@ -43,12 +43,12 @@ function parseCSV(csvText) {
  * HELPER: Today in MM/DD/YYYY
  *****************************************************/
 
-function getTodayInMMDDYYYY() {
+function getTodayInmdyyyy() {
   const today = new Date();
   const mm = String(today.getMonth() + 1).padStart(2, '0'); // e.g. '03'
   const dd = String(today.getDate()).padStart(2, '0');      // e.g. '19'
   const yyyy = today.getFullYear();
-  return `${mm}/${dd}/${yyyy}`; // e.g. '03/19/2025'
+  return `${m}/${d}/${yyyy}`; // e.g. '03/19/2025'
 }
 
 /*****************************************************
@@ -56,7 +56,7 @@ function getTodayInMMDDYYYY() {
  *****************************************************/
 
 function findTodayRow(rows) {
-  const todayStr = getTodayInMMDDYYYY();
+  const todayStr = getTodayInmdyyyy();
   // Filter to get all rows matching today's date.
   const matchingRows = rows.filter(r => r["Event Date"] === todayStr);
 
