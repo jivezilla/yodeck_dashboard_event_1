@@ -1,3 +1,5 @@
+console.log("Script is running!");
+
 // script.js for SHC Event Dashboard
 // This version finds the LAST row matching today's date in the "Event Date" column.
 
