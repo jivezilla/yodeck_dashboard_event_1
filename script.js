@@ -99,16 +99,12 @@ function findTodayRow(rows) {
  *****************************************************/
 
 function renderData(eventData) {
-  // Adjust these keys as needed to match your actual columns
-  const eventName = eventData["Event Name"] || "(No event name)";
-  const guestCount = eventData["Guest Count"] || "0";
-  const departureTime = eventData["Departure Time"] || "TBD";
-  const endTime = eventData["End Time"] || "TBD";
+  console.log("Rendering event data:", eventData);
 
-  document.getElementById("eventNameValue").textContent = eventName;
-  document.getElementById("guestCountValue").textContent = guestCount;
-  document.getElementById("departureTimeValue").textContent = departureTime;
-  document.getElementById("endTimeValue").textContent = endTime;
+  document.getElementById("eventNameValue").textContent = eventData["Event Name"] || "(No event name)";
+  document.getElementById("guestCountValue").textContent = eventData["Guest Count"] || "0";
+  document.getElementById("departureTimeValue").textContent = eventData["Departure Time"] || "TBD";
+  document.getElementById("endTimeValue").textContent = eventData["End Time"] || "TBD";
 }
 
 /*****************************************************
@@ -116,6 +112,7 @@ function renderData(eventData) {
  *****************************************************/
 
 async function init() {
+  console.log("Today's row data:", todayRow
   const csvText = await fetchCSV();
   const parsedRows = parseCSV(csvText);
 
@@ -146,3 +143,4 @@ async function init() {
 }
 
 init();
+);
