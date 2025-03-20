@@ -1,85 +1,118 @@
-// Your published CSV URL (from your message):
+// script.js for SHC Event Dashboard
+// This version finds the LAST row matching today's date in the "Event Date" column.
+
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSOJpWzhoSZ2zgH1l9DcW3gc4RsbTsRqsSCTpGuHcOAfESVohlucF8QaJ6u58wQE0UilF7ChQXhbckE/pub?output=csv";
 
-// STEP 1: Fetch the CSV
-async function fetchSheetData() {
+/*****************************************************
+ * FETCH & PARSE CSV
+ *****************************************************/
+
+async function fetchCSV() {
   try {
     const response = await fetch(SHEET_CSV_URL);
     const csvText = await response.text();
-    return parseCSV(csvText);
+    return csvText;
   } catch (error) {
-    console.error("Error fetching sheet data:", error);
-    return [];
+    console.error("Failed to fetch CSV:", error);
+    return "";
   }
 }
 
-// STEP 2: Parse the CSV into an array of objects
 function parseCSV(csvText) {
-  const lines = csvText.split("\n").map(line => line.trim());
+  const lines = csvText.trim().split("\n");
   const headers = lines[0].split(",").map(h => h.trim());
+  const dataRows = [];
 
-  const data = [];
   for (let i = 1; i < lines.length; i++) {
-    if (!lines[i]) continue; // skip empty lines
-    const rowData = {};
+    if (!lines[i]) continue;
     const cells = lines[i].split(",");
+    const rowObj = {};
     headers.forEach((header, idx) => {
-      // Some cells might have commas inside quotes, so you might want a more robust CSV parser
-      // but for a minimal approach, this often works if your form data doesn't contain messy commas
-      rowData[header] = (cells[idx] || "").trim();
+      rowObj[header] = (cells[idx] || "").trim();
     });
-    data.push(rowData);
+    dataRows.push(rowObj);
   }
-  return data;
+  return dataRows;
 }
 
-// STEP 3: Render the relevant columns on the page
-function renderEvents(events) {
-  const container = document.getElementById("events-container");
-  container.innerHTML = "";
+/*****************************************************
+ * HELPER: Today in MM/DD/YYYY
+ *****************************************************/
 
-  // We'll just loop over each "row" from the CSV
-  // and display whichever columns you want:
-  events.forEach((ev) => {
-    // Example columns we care about:
-    const eventName = ev["Event Name"] || "N/A";
-    const date = ev["Date"] || "N/A";
-    const startTime = ev["Event Start Time"] || "N/A";
-    const breakdownTime = ev["Event Conclusion/Breakdown Time"] || "N/A";
-    const venueName = ev["Venue Name"] || "N/A";
-    const guestCount = ev["Guest Count"] || "N/A";
-    const otherDetails = ev["Other Details"] || "";
-
-    // Build an HTML block
-    const div = document.createElement("div");
-    div.classList.add("event");
-
-    div.innerHTML = `
-      <h2>${eventName}</h2>
-      <p><strong>Date:</strong> ${date}</p>
-      <p><strong>Start Time:</strong> ${startTime}</p>
-      <p><strong>Breakdown Time:</strong> ${breakdownTime}</p>
-      <p><strong>Venue Name:</strong> ${venueName}</p>
-      <p><strong>Guest Count:</strong> ${guestCount}</p>
-      <p><strong>Other Details:</strong> ${otherDetails}</p>
-    `;
-    container.appendChild(div);
-  });
+function getTodayInMMDDYYYY() {
+  const today = new Date();
+  const mm = String(today.getMonth() + 1).padStart(2, '0'); // e.g. '03'
+  const dd = String(today.getDate()).padStart(2, '0');      // e.g. '19'
+  const yyyy = today.getFullYear();
+  return `${mm}/${dd}/${yyyy}`; // e.g. '03/19/2025'
 }
 
-// STEP 4: Initialize
+/*****************************************************
+ * FIND LAST ROW FOR TODAY
+ *****************************************************/
+
+function findTodayRow(rows) {
+  const todayStr = getTodayInMMDDYYYY();
+  // Filter to get all rows matching today's date.
+  const matchingRows = rows.filter(r => r["Event Date"] === todayStr);
+
+  // Return the LAST one if it exists
+  if (matchingRows.length === 0) {
+    return null;
+  } else {
+    return matchingRows[matchingRows.length - 1];
+  }
+}
+
+/*****************************************************
+ * RENDER DATA
+ *****************************************************/
+
+function renderData(eventData) {
+  // Adjust these keys as needed to match your actual columns
+  const eventName = eventData["Event Name"] || "(No event name)";
+  const guestCount = eventData["Guest Count"] || "0";
+  const departureTime = eventData["Departure Time"] || "TBD";
+  const endTime = eventData["End Time"] || "TBD";
+
+  document.getElementById("eventNameValue").textContent = eventName;
+  document.getElementById("guestCountValue").textContent = guestCount;
+  document.getElementById("departureTimeValue").textContent = departureTime;
+  document.getElementById("endTimeValue").textContent = endTime;
+}
+
+/*****************************************************
+ * MAIN INIT
+ *****************************************************/
+
 async function init() {
-  const data = await fetchSheetData();
-  // You can filter or sort 'data' if needed (e.g., only show events for today)
+  const csvText = await fetchCSV();
+  const parsedRows = parseCSV(csvText);
 
-  renderEvents(data);
+  // Filter for the LAST row that matches today's date
+  const todayRow = findTodayRow(parsedRows);
 
-  // If you want it to auto-refresh every X minutes:
+  if (!todayRow) {
+    console.warn("No row found for today's date!");
+    return;
+  }
+
+  // Render that row
+  renderData(todayRow);
+
+  // Auto-refresh every 30 seconds
   setInterval(async () => {
-    const updatedData = await fetchSheetData();
-    renderEvents(updatedData);
-  }, 300000); // 300000 ms = 5 minutes
+    console.log("Refreshing data...");
+    const newCSV = await fetchCSV();
+    const newRows = parseCSV(newCSV);
+    const newTodayRow = findTodayRow(newRows);
+
+    if (!newTodayRow) {
+      console.warn("No row found for today's date on refresh!");
+      return;
+    }
+    renderData(newTodayRow);
+  }, 30_000);
 }
 
-// Kick off the script
 init();
