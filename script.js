@@ -30,7 +30,7 @@ function parseCSV(csvText) {
 
   for (let i = 0; i < csvText.length; i++) {
     const char = csvText[i];
-    
+
     if (char === '"' && csvText[i + 1] === '"') { 
       cell += '"';  // Handle escaped quotes ("" -> ")
       i++;
@@ -48,7 +48,7 @@ function parseCSV(csvText) {
       cell += char;
     }
   }
-  
+
   if (row.length > 0) {
     rows.push(row);
   }
@@ -63,7 +63,6 @@ function parseCSV(csvText) {
     return obj;
   });
 }
-
 
 /*****************************************************
  * HELPER: Today in M/D/YYYY
@@ -112,12 +111,14 @@ function renderData(eventData) {
  *****************************************************/
 
 async function init() {
-  console.log("Today's row data:", todayRow
+  console.log("Initializing script...");
+  
   const csvText = await fetchCSV();
   const parsedRows = parseCSV(csvText);
 
   // Filter for the LAST row that matches today's date
   const todayRow = findTodayRow(parsedRows);
+  console.log("Today's row data:", todayRow);
 
   if (!todayRow) {
     console.warn("No row found for today's date!");
@@ -143,4 +144,3 @@ async function init() {
 }
 
 init();
-);
