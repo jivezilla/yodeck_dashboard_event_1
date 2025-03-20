@@ -8,9 +8,11 @@ const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSOJpWzho
  *****************************************************/
 
 async function fetchCSV() {
+  console.log("Fetching CSV data...");
   try {
     const response = await fetch(SHEET_CSV_URL);
     const csvText = await response.text();
+    console.log("CSV Fetch Successful:", csvText.substring(0, 100)); // Show first 100 chars
     return csvText;
   } catch (error) {
     console.error("Failed to fetch CSV:", error);
