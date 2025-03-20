@@ -1,53 +1,52 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SHC Event Dashboard</title>
 
-  <!-- Load only Instrument Serif from Google Fonts -->
+  <!-- Google Font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital,wght@0,400;0,700;1,400;1,700&display=swap"
-    rel="stylesheet"
-  >
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:wght@400;700&display=swap" rel="stylesheet">
 
   <style>
-    /* Basic Reset */
+    /* Reset */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
 
-   body {
-   background: #E99031;
-  color: #fff;
-  font-family: "Instrument Serif", serif;
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  height: 5vh;
-  padding-left: 2rem;
-}
+    /* Background and Font */
+    body {
+      background: #E99031;
+      color: #fff;
+      font-family: "Instrument Serif", serif;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      min-height: 100vh;
+      padding: 2rem;
+    }
 
-    /* Container row for 4 fields */
+    /* Main Row Container */
     .event-row {
       display: flex;
       flex-direction: row;
-      gap: 6rem;  /* spacing between items */
+      gap: 6rem;
+      flex-wrap: nowrap;
     }
 
-    /* Event Name: large text (60px) */
+    /* Event Name */
     .eventName {
       font-size: 60px;
       display: flex;
-      align-items: left;
-      gap: 1rem;
+      align-items: center;
       white-space: nowrap;
     }
 
-    /* Other fields: 40px font */
+    /* Other Fields */
     .field {
       font-size: 40px;
       display: flex;
@@ -56,10 +55,11 @@
       white-space: nowrap;
     }
 
-    /* Icon placeholders (if used) */
+    /* Icon Styling */
     .icon {
       width: 74px;
       height: 74px;
+      display: inline-block;
       background-size: contain;
       background-repeat: no-repeat;
       background-position: center;
@@ -74,19 +74,6 @@
       background-image: url('./icons/endTime.png');
     }
 
-    /* Additional font-style classes (optional) */
-    .instrument-serif-regular {
-      font-weight: 400;
-      font-style: normal;
-    }
-    .instrument-serif-regular-italic {
-      font-weight: 400;
-      font-style: italic;
-    }
-    .instrument-serif-bold {
-      font-weight: 700;
-      font-style: normal;
-    }
   </style>
 </head>
 
@@ -94,25 +81,25 @@
   <div class="event-row">
     <!-- Event Name -->
     <div class="eventName">
-      <span id="eventNameValue">eventName</span>
+      <span id="eventNameValue">Loading...</span>
     </div>
 
     <!-- Guest Count -->
     <div class="field">
       <div class="icon icon-guest"></div>
-      <span id="guestCountValue">guestCount</span>
+      <span id="guestCountValue">Loading...</span>
     </div>
 
     <!-- Departure Time -->
     <div class="field">
       <div class="icon icon-departure"></div>
-      <span id="departureTimeValue">departureTime</span>
+      <span id="departureTimeValue">Loading...</span>
     </div>
 
     <!-- End Time -->
     <div class="field">
       <div class="icon icon-end"></div>
-      <span id="endTimeValue">endTime</span>
+      <span id="endTimeValue">Loading...</span>
     </div>
   </div>
 
