@@ -108,7 +108,7 @@ function renderData(eventData) {
   document.getElementById("eventNameValue").textContent = eventData["Event Name"] || "(No event name)";
   document.getElementById("guestCountValue").textContent = eventData["Guest Count"] || "0";
   document.getElementById("departureTimeValue").textContent = eventData["Departure Time"] || "TBD";
-  document.getElementById("endTimeValue").textContent = eventData["End Time"] || "TBD";
+  document.getElementById("endTimeValue").textContent = eventData["Event Conclusion/Breakdown Time"] || "TBD";
 }
 
 /*****************************************************
