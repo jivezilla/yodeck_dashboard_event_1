@@ -1,7 +1,7 @@
 console.log("Script is running!");
 
 // script.js for SHC Event Dashboard
-// This version finds the LAST row matching today's date in the "Event Date" column.
+// Finds the LAST row matching today's date in the "Event Date" column.
 
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSOJpWzhoSZ2zgH1l9DcW3gc4RsbTsRqsSCTpGuHcOAfESVohlucF8QaJ6u58wQE0UilF7ChQXhbckE/pub?output=csv";
 
@@ -30,7 +30,7 @@ function parseCSV(csvText) {
 
   for (let i = 0; i < csvText.length; i++) {
     const char = csvText[i];
-
+    
     if (char === '"' && csvText[i + 1] === '"') { 
       cell += '"';  // Handle escaped quotes ("" -> ")
       i++;
@@ -48,7 +48,7 @@ function parseCSV(csvText) {
       cell += char;
     }
   }
-
+  
   if (row.length > 0) {
     rows.push(row);
   }
@@ -82,8 +82,13 @@ function getTodayInMDYYYY() {
 
 function findTodayRow(rows) {
   const todayStr = getTodayInMDYYYY();
+  console.log("Today's date for filtering:", todayStr);
+
   // Filter to get all rows matching today's date.
   const matchingRows = rows.filter(r => r["Event Date"] === todayStr);
+
+  // Log matching rows for debugging
+  console.log("Matching rows found:", matchingRows);
 
   // Return the LAST one if it exists
   if (matchingRows.length === 0) {
@@ -111,14 +116,13 @@ function renderData(eventData) {
  *****************************************************/
 
 async function init() {
-  console.log("Initializing script...");
-  
+  console.log("Initializing event dashboard...");
+
   const csvText = await fetchCSV();
   const parsedRows = parseCSV(csvText);
 
-  // Filter for the LAST row that matches today's date
+  // Find today's event
   const todayRow = findTodayRow(parsedRows);
-  console.log("Today's row data:", todayRow);
 
   if (!todayRow) {
     console.warn("No row found for today's date!");
@@ -140,7 +144,7 @@ async function init() {
       return;
     }
     renderData(newTodayRow);
-  }, 30_000);
+  }, 30000);
 }
 
 init();
