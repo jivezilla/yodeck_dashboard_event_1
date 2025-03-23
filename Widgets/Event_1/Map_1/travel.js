@@ -1,232 +1,255 @@
-// travel.js
+console.log("Script is running!");
 
-var SHEET_CSV_URL =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vSOJpWzhoSZ2zgH1l9DcW3gc4RsbTsRqsSCTpGuHcOAfESVohlucF8QaJ6u58wQE0UilF7ChQXhbckE/pub?output=csv";
-var GOOGLE_API_KEY = "AIzaSyB4b4Ho4rNwF9hyPKCYFYXNU6dXI550M6U";
-var ORIGIN_ADDRESS = "221 Corley Mill Rd, Lexington, SC 29072";
+// script.js for SHC Event Dashboard
+// Finds the LAST row matching today's date in the "Date" column.
 
-/**
- * Attach initMap to window so Google can call it when the API loads.
- */
-window.initMap = function() {
-  console.log("Google Maps API Loaded. Initializing...");
-  updateDashboard();
-};
+const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSOJpWzhoSZ2zgH1l9DcW3gc4RsbTsRqsSCTpGuHcOAfESVohlucF8QaJ6u58wQE0UilF7ChQXhbckE/pub?output=csv";
 
-/**
- * Fetch CSV data from your Google Sheet.
- */
-function fetchCSV() {
-  return fetch(SHEET_CSV_URL).then(function(response) {
-    console.log("Fetch finished loading:", response.url);
-    return response.text();
-  });
+/*****************************************************
+ * FETCH & PARSE CSV
+ *****************************************************/
+
+async function fetchCSV() {
+  console.log("Fetching CSV data...");
+  try {
+    const response = await fetch(SHEET_CSV_URL);
+    const csvText = await response.text();
+    console.log("CSV Fetch Successful:", csvText.substring(0, 100)); // Show first 100 chars
+    return csvText;
+  } catch (error) {
+    console.error("Failed to fetch CSV:", error);
+    return "";
+  }
 }
 
-/**
- * Parse CSV text into an array of objects.
- */
 function parseCSV(csvText) {
-  var lines = csvText.trim().split("\n");
-  var headers = lines[0].split(",").map(function(h) {
-    return h.trim();
-  });
-  var data = [];
-  for (var i = 1; i < lines.length; i++) {
-    var values = lines[i].split(",");
-    var rowObj = {};
-    for (var j = 0; j < headers.length; j++) {
-      rowObj[headers[j]] = values[j];
+  const rows = [];
+  let insideQuotes = false;
+  let row = [];
+  let cell = '';
+
+  for (let i = 0; i < csvText.length; i++) {
+    const char = csvText[i];
+    
+    if (char === '"' && csvText[i + 1] === '"') { 
+      cell += '"';  // Handle escaped quotes ("" -> ")
+      i++;
+    } else if (char === '"') {
+      insideQuotes = !insideQuotes;
+    } else if (char === ',' && !insideQuotes) {
+      row.push(cell.trim());
+      cell = '';
+    } else if (char === '\n' && !insideQuotes) {
+      row.push(cell.trim());
+      rows.push(row);
+      row = [];
+      cell = '';
+    } else {
+      cell += char;
     }
-    data.push(rowObj);
   }
-  return data;
+  
+  if (row.length > 0) {
+    rows.push(row);
+  }
+
+  // Convert array to objects using headers
+  const headers = rows[0];
+  return rows.slice(1).map(row => {
+    let obj = {};
+    headers.forEach((header, idx) => {
+      obj[header] = row[idx] || "";
+    });
+    return obj;
+  });
 }
 
-/**
- * Return today's date in M/D/YYYY format.
- */
+/*****************************************************
+ * HELPER: Today in M/D/YYYY
+ *****************************************************/
+
 function getTodayInMDYYYY() {
-  var today = new Date();
-  return (today.getMonth() + 1) + "/" + today.getDate() + "/" + today.getFullYear();
+  const today = new Date();
+  const M = today.getMonth() + 1; // No leading zero
+  const D = today.getDate();      // No leading zero
+  const YYYY = today.getFullYear();
+  return `${M}/${D}/${YYYY}`;
 }
 
-/**
- * Client-side geocoder using the Maps JavaScript API.
- */
-function geocodeClientSide(address) {
-  return new Promise(function(resolve, reject) {
-    console.log("Geocoding: " + address);
-    var geocoder = new google.maps.Geocoder();
-    geocoder.geocode({ address: address }, function(results, status) {
-      if (status === "OK") {
-        resolve(results[0].geometry.location);
-      } else {
-        console.error("Geocoding failed:", status);
-        resolve(null); // Continue gracefully
-      }
-    });
-  });
+/*****************************************************
+ * FIND LAST ROW FOR TODAY
+ *****************************************************/
+
+function findTodayRow(rows) {
+  const todayStr = getTodayInMDYYYY();
+  console.log("Today's date for filtering:", todayStr);
+
+  // Filter to get all rows matching today's date.
+  const matchingRows = rows.filter(r => r["Date"]?.trim() === todayStr);
+  console.log("Matching rows found:", matchingRows);
+
+  // Return the LAST one if it exists.
+  return matchingRows.length === 0 ? null : matchingRows[matchingRows.length - 1];
 }
 
-/**
- * Format duration from a raw string (e.g., "165s") into a user-friendly string.
- * Converts seconds to minutes, or hours and minutes if over 60 minutes.
- */
-function formatDuration(durationStr) {
-  var seconds = parseInt(durationStr.replace(/s/i, ""), 10);
-  if (isNaN(seconds)) {
-    return durationStr;
+/*****************************************************
+ * RENDER STATIC DATA
+ *****************************************************/
+
+function renderData(eventData) {
+  const eventName = eventData["Event Name"] || "(No event name)";
+  const guestCount = eventData["Guest Count"] || "0";
+  let endTime = eventData["Event Conclusion/Breakdown Time"] || "TBD";
+  
+  // Format end time to remove seconds (e.g., "9:30:00 PM" -> "9:30 PM")
+  if (endTime !== "TBD") {
+    endTime = endTime.replace(/:00(\s*[AP]M)/i, "$1");
   }
-  if (seconds < 3600) {
-    var minutes = Math.round(seconds / 60);
-    return minutes + " min";
-  } else {
-    var hours = Math.floor(seconds / 3600);
-    var minutes = Math.round((seconds % 3600) / 60);
-    return hours + " hr " + minutes + " min";
+
+  document.getElementById("eventNameValue").textContent = eventName;
+  document.getElementById("guestCountValue").textContent = guestCount;
+  document.getElementById("endTimeValue").textContent = endTime;
+}
+
+/*****************************************************
+ * DEPARTURE TIME CALCULATION FUNCTIONS
+ *****************************************************/
+
+/**
+ * Determine the event start time from candidate columns.
+ * If "Event Start Time" exists but is time-only (e.g., "9:30:00 PM"),
+ * combine it with today's date.
+ */
+function determineEventStartTime(row) {
+  let startTimeStr = row["Event Start Time"]?.trim();
+  if (startTimeStr) {
+    // If the string doesn't have a date part, prepend today's date.
+    if (!/[\d\/-]/.test(startTimeStr.split(" ")[0])) {
+      startTimeStr = getTodayInMDYYYY() + " " + startTimeStr;
+    }
+    const dt = new Date(startTimeStr);
+    if (!isNaN(dt.getTime())) {
+      return dt;
+    }
   }
+  
+  // Otherwise, try the other candidates.
+  const candidates = [];
+  if (row["Meal Service Start Time"]?.trim()) {
+    candidates.push({ time: new Date(getTodayInMDYYYY() + " " + row["Meal Service Start Time"].trim()), source: "Meal Service Start Time" });
+  }
+  if (row["Cocktail Hour Start Time"]?.trim()) {
+    candidates.push({ time: new Date(getTodayInMDYYYY() + " " + row["Cocktail Hour Start Time"].trim()), source: "Cocktail Hour Start Time" });
+  }
+  if (row["Passed Hors D'oeuvres Time Start"]?.trim()) {
+    candidates.push({ time: new Date(getTodayInMDYYYY() + " " + row["Passed Hors D'oeuvres Time Start"].trim()), source: "Passed Hors D'oeuvres Time Start" });
+  }
+  if (candidates.length === 0) {
+    return null;
+  }
+  // Sort candidates by time (earliest first)
+  candidates.sort((a, b) => a.time - b.time);
+  // Special rule: if the earliest is Cocktail Hour and "Passed Hors D'oeuvres" equals "yes"
+  if (candidates[0].source === "Cocktail Hour Start Time" &&
+      row["Passed Hors D'oeuvres"] &&
+      row["Passed Hors D'oeuvres"].toLowerCase() === "yes") {
+    return candidates[0].time;
+  }
+  return candidates[0].time;
 }
 
 /**
- * Get travel time from origin to destination using the new Routes API.
- * This makes a POST request to https://routes.googleapis.com/directions/v2:computeRoutes.
+ * Parse a formatted travel time string (e.g., "1 hr 5 min" or "3 min") into total minutes.
  */
-function getTravelTime(originCoords, destCoords) {
-  return new Promise(function(resolve, reject) {
-    if (!originCoords || !destCoords) {
-      reject("Invalid coordinates");
+function parseTravelTime(travelTimeStr) {
+  let totalMinutes = 0;
+  const hrMatch = travelTimeStr.match(/(\d+)\s*hr/);
+  if (hrMatch) {
+    totalMinutes += parseInt(hrMatch[1], 10) * 60;
+  }
+  const minMatch = travelTimeStr.match(/(\d+)\s*min/);
+  if (minMatch) {
+    totalMinutes += parseInt(minMatch[1], 10);
+  }
+  return totalMinutes;
+}
+
+/**
+ * Calculate Departure Time using:
+ * Departure Time = Event Start Time - (2hr baseline (120 min) + Travel Time + Base Buffer (5 min) + Extra Guest Buffer)
+ * Extra Guest Buffer: 15 minutes per 50 guests above 100.
+ */
+function calculateDepartureTime(eventStartTime, travelTimeStr, guestCount, baseBuffer) {
+  baseBuffer = baseBuffer || 5;
+  const travelMinutes = parseTravelTime(travelTimeStr);
+  const baseline = 120; // 2 hours
+  let extraGuestBuffer = 0;
+  if (guestCount > 100) {
+    extraGuestBuffer = 15 * Math.ceil((guestCount - 100) / 50);
+  }
+  const totalSubtract = baseline + travelMinutes + baseBuffer + extraGuestBuffer;
+  return new Date(eventStartTime.getTime() - totalSubtract * 60000);
+}
+
+/**
+ * Update the Departure Time display using the computed departure time.
+ * This function now simply displays the time (formatted like "9:30 PM") with no prefix.
+ */
+function updateDepartureTimeDisplay(eventData) {
+  const eventStartTime = determineEventStartTime(eventData);
+  if (!eventStartTime) {
+    console.error("No valid event start time found.");
+    return;
+  }
+  const travelTime = localStorage.getItem("eventETA"); // e.g., "1 hr 5 min"
+  if (!travelTime) {
+    console.error("No travel time available.");
+    return;
+  }
+  const guestCount = parseInt(eventData["Guest Count"], 10) || 0;
+  const departureTime = calculateDepartureTime(eventStartTime, travelTime, guestCount, 5);
+  // Use numeric hour so no leading zero (e.g., "2:24 PM")
+  const formattedDepartureTime = departureTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  document.getElementById("departureTimeValue").textContent = formattedDepartureTime;
+}
+
+/*****************************************************
+ * MAIN INIT
+ *****************************************************/
+
+async function init() {
+  console.log("Initializing event dashboard...");
+
+  const csvText = await fetchCSV();
+  const parsedRows = parseCSV(csvText);
+
+  // Find today's event row.
+  const todayRow = findTodayRow(parsedRows);
+
+  if (!todayRow) {
+    console.warn("No row found for today's date!");
+    return;
+  }
+
+  // Render static data.
+  renderData(todayRow);
+  // Compute and update departure time.
+  updateDepartureTimeDisplay(todayRow);
+
+  // Auto-refresh every 30 seconds.
+  setInterval(async () => {
+    console.log("Refreshing data...");
+    const newCSV = await fetchCSV();
+    const newRows = parseCSV(newCSV);
+    const newTodayRow = findTodayRow(newRows);
+
+    if (!newTodayRow) {
+      console.warn("No row found for today's date on refresh!");
       return;
     }
-    var url = "https://routes.googleapis.com/directions/v2:computeRoutes?key=" + GOOGLE_API_KEY;
-    var requestBody = {
-      origin: {
-        location: {
-          latLng: {
-            latitude: originCoords.lat(),
-            longitude: originCoords.lng()
-          }
-        }
-      },
-      destination: {
-        location: {
-          latLng: {
-            latitude: destCoords.lat(),
-            longitude: destCoords.lng()
-          }
-        }
-      },
-      travelMode: "DRIVE",
-      routingPreference: "TRAFFIC_AWARE",
-      computeAlternativeRoutes: false,
-      routeModifiers: {
-        avoidHighways: false,
-        avoidTolls: false,
-        avoidFerries: false
-      },
-      languageCode: "en-US",
-      units: "IMPERIAL"
-    };
-
-    fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        // Request only the route duration field.
-        "X-Goog-FieldMask": "routes.duration"
-      },
-      body: JSON.stringify(requestBody)
-    })
-      .then(function(response) {
-        if (!response.ok) {
-          reject("Routes API request failed with status " + response.status);
-          return;
-        }
-        return response.json();
-      })
-      .then(function(data) {
-        if (data.routes && data.routes.length > 0) {
-          var rawDuration = data.routes[0].duration; // e.g., "165s"
-          var formatted = formatDuration(rawDuration);
-          resolve(formatted);
-        } else {
-          reject("No valid route found in response.");
-        }
-      })
-      .catch(function(err) {
-        reject("Routes API error: " + err);
-      });
-  });
+    renderData(newTodayRow);
+    updateDepartureTimeDisplay(newTodayRow);
+  }, 30000);
 }
 
-/**
- * Update the dashboard with travel ETA (displayed as an icon and text)
- * and an embedded Google Map.
- */
-function updateDashboard() {
-  console.log("Fetching data...");
-  fetchCSV().then(function(csvText) {
-    var rows = parseCSV(csvText);
-    var todayStr = getTodayInMDYYYY();
-    var todayEvents = [];
-    for (var i = 0; i < rows.length; i++) {
-      if (rows[i]["Date"] === todayStr) {
-        todayEvents.push(rows[i]);
-      }
-    }
-    var todaysEvent = todayEvents.length > 0 ? todayEvents[todayEvents.length - 1] : null;
-    var etaEl = document.getElementById("eta");
-    var mapEl = document.getElementById("mapFrame");
-
-    if (!todaysEvent) {
-      etaEl.textContent = "No event today";
-      mapEl.src = "";
-      localStorage.removeItem("eventETA");
-      return;
-    }
-
-    var destAddress =
-      todaysEvent["Address"] + ", " +
-      todaysEvent["City"] + ", " +
-      todaysEvent["State"] + " " +
-      todaysEvent["Zipcode"];
-
-    // Geocode both origin and destination (client-side)
-    Promise.all([
-      geocodeClientSide(ORIGIN_ADDRESS),
-      geocodeClientSide(destAddress)
-    ]).then(function(coordsArray) {
-      var originCoords = coordsArray[0];
-      var destCoords = coordsArray[1];
-
-      if (!originCoords || !destCoords) {
-        etaEl.textContent = "Address not found";
-        mapEl.src = "";
-        return;
-      }
-
-      // Get travel time using the new Routes API
-      getTravelTime(originCoords, destCoords)
-        .then(function(travelTime) {
-          // Create an ETA container with the icon on the left and travel time text on the right.
-          // Replace "path/to/eta-icon.png" with your actual PNG icon path.
-          etaEl.innerHTML = '<div class="eta-container">' +
-                            '<img src="icons/travelTimeicon.png" class="eta-icon" alt="ETA Icon">' +
-                            '<span class="eta-text">' + travelTime + '</span>' +
-                            '</div>';
-          localStorage.setItem("eventETA", travelTime);
-        })
-        .catch(function(error) {
-          etaEl.textContent = error;
-        });
-
-      // Embed a Google Map with driving directions using the Maps Embed API.
-      var googleMapsEmbedURL = "https://www.google.com/maps/embed/v1/directions?key=" +
-                               GOOGLE_API_KEY +
-                               "&origin=" + encodeURIComponent(ORIGIN_ADDRESS) +
-                               "&destination=" + encodeURIComponent(destAddress) +
-                               "&mode=driving";
-      mapEl.src = googleMapsEmbedURL;
-    });
-  });
-}
+init();
