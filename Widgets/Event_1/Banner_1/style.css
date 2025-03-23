@@ -7,40 +7,41 @@
   box-sizing: border-box;
 }
 
-/* Body styling; center the dashboard container */
+/* Center the dashboard container on the page */
 body {
   background: #C77B29;
   color: #fff;
   font-family: "Instrument Serif", serif;
   display: flex;
   justify-content: center;
-  padding: 0;
+  align-items: center;
+  height: 100vh;
   margin: 0;
 }
 
-/* Dashboard container: total width 1735px, 5px top padding */
+/* Dashboard container: fixed at 1776px wide and 90px high */
 .dashboard-container {
   width: 1776px;
-  padding-top: 5px;
+  height: 90px;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-/* Left container for Event Name | Venue Name */
+/* Left container: fixed width 760px with specified left/right padding, left-aligned */
 .left-container {
   width: 760px;
   padding-left: 48px;
   padding-right: 38px;
   text-align: left;
   font-weight: bold;
-  /* Using clamp to scale font-size between 30px and 50px */
-  font-size: clamp(30px, 4vw, 50px);
+  /* Using clamp to set font-size between 30px and 50px, max 50px */
+  font-size: clamp(30px, 3vw, 50px);
   white-space: nowrap;
   overflow: hidden;
 }
 
-/* Right containers group: auto-fit content, 38px gap between, 192px right padding */
+/* Right containers group: auto width for content, 38px gap, right padding 192px */
 .right-containers {
   display: flex;
   align-items: center;
@@ -52,21 +53,20 @@ body {
 .field {
   display: flex;
   align-items: center;
-  height: 80px;
   white-space: nowrap;
 }
 
-/* Icon styling for right containers */
+/* Icon styling for right fields */
 .icon {
-  width: 74px;
-  height: 74px;
+  width: 65px;
+  height: 65px;
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
-  margin-right: 5px; /* Gap between icon and text */
+  margin-right: 10px; /* gap between icon and text */
 }
 
-/* Specific icon backgrounds */
+/* Specific icon images */
 .icon-guest {
   background-image: url('./icons/guestCount.png');
 }
@@ -77,9 +77,8 @@ body {
   background-image: url('./icons/endTime.png');
 }
 
-/* Right field text styling */
+/* Field text styling */
 .field span {
-  font-size: 40px;
+  font-size: 60px;
   text-align: right;
-  font-weight: bold;
 }
