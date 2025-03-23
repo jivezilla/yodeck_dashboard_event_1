@@ -10,12 +10,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:wght@400;700&display=swap" rel="stylesheet">
   
-  <!-- Link to external CSS -->
+  <!-- External CSS -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="dashboard-container">
-    <!-- Left container: [Event Name] | [Venue Name] -->
+    <!-- Left container: combined event name and venue -->
     <div class="left-container">
       <span id="eventNameValue">Loading...</span>
     </div>
@@ -40,12 +40,14 @@
     </div>
   </div>
   
-  <!-- Error logging -->
+  <!-- Error Logging -->
   <script>
     window.addEventListener("error", function(event) {
       console.error("JavaScript Error:", event.message);
     });
   </script>
+  
+  <!-- Banner Script -->
   <script src="script.js"></script>
 </body>
 </html>
