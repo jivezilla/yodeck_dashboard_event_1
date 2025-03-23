@@ -1,0 +1,85 @@
+/* style.css */
+
+/* Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Body styling; center the dashboard container */
+body {
+  background: #C77B29;
+  color: #fff;
+  font-family: "Instrument Serif", serif;
+  display: flex;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+}
+
+/* Dashboard container: total width 1735px, 5px top padding */
+.dashboard-container {
+  width: 1735px;
+  padding-top: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Left container for Event Name | Venue Name */
+.left-container {
+  width: 760px;
+  padding-left: 48px;
+  padding-right: 38px;
+  text-align: left;
+  font-weight: bold;
+  /* Using clamp to scale font-size between 30px and 50px */
+  font-size: clamp(30px, 4vw, 50px);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* Right containers group: auto-fit content, 38px gap between, 192px right padding */
+.right-containers {
+  display: flex;
+  align-items: center;
+  gap: 38px;
+  padding-right: 192px;
+}
+
+/* Each field container (Guest Count, Departure Time, End Time) */
+.field {
+  display: flex;
+  align-items: center;
+  height: 90px;
+  white-space: nowrap;
+}
+
+/* Icon styling for right containers */
+.icon {
+  width: 74px;
+  height: 74px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  margin-right: 5px; /* Gap between icon and text */
+}
+
+/* Specific icon backgrounds */
+.icon-guest {
+  background-image: url('./icons/guestCount.png');
+}
+.icon-departure {
+  background-image: url('./icons/departureTime.png');
+}
+.icon-end {
+  background-image: url('./icons/endTime.png');
+}
+
+/* Right field text styling */
+.field span {
+  font-size: 40px;
+  text-align: right;
+  font-weight: bold;
+}
