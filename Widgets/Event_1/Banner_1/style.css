@@ -20,7 +20,7 @@ body {
 
 /* Dashboard container: total width 1735px, 5px top padding */
 .dashboard-container {
-  width: 1735px;
+  width: 1776px;
   padding-top: 5px;
   display: flex;
   justify-content: space-between;
@@ -52,7 +52,7 @@ body {
 .field {
   display: flex;
   align-items: center;
-  height: 90px;
+  height: 80px;
   white-space: nowrap;
 }
 
