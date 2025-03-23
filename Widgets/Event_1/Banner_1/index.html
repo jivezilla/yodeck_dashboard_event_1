@@ -4,114 +4,48 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SHC Event Dashboard</title>
-
+  
   <!-- Google Font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:wght@400;700&display=swap" rel="stylesheet">
-
-  <style>
-    /* Reset */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    /* Background and Font */
-    body {
-      background: #C77B29;
-  color: #fff;
-  font-family: "Instrument Serif", serif;
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;  /* centers vertically */
-  height: 100vh;        /* ensures the body takes full viewport height */
-  padding-left: 2rem;
-  margin: 0;            /* ensure no default margin affects alignment */
-    }
-
-    /* Main Row Container */
-    .event-row {
-      display: flex;
-      flex-direction: row;
-      gap: 6rem;
-      flex-wrap: nowrap;
-    }
-
-    /* Event Name */
-    .eventName {
-      font-size: 70px;
-      display: flex;
-      align-items: center;
-      white-space: nowrap;
-    }
-
-    /* Other Fields */
-    .field {
-      font-size: 60px;
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      white-space: nowrap;
-    }
-
-    /* Icon Styling */
-    .icon {
-      width: 74px;
-      height: 74px;
-      display: inline-block;
-      background-size: contain;
-      background-repeat: no-repeat;
-      background-position: center; /* Fixed */
-    }
-    .icon-guest {
-      background-image: url('./icons/guestCount.png');
-    }
-    .icon-departure {
-      background-image: url('./icons/departureTime.png');
-    }
-    .icon-end {
-      background-image: url('./icons/endTime.png');
-    }
-
-  </style>
+  
+  <!-- Link to external CSS -->
+  <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-  <div class="event-row">
-    <!-- Event Name -->
-    <div class="eventName">
+  <div class="dashboard-container">
+    <!-- Left container: [Event Name] | [Venue Name] -->
+    <div class="left-container">
       <span id="eventNameValue">Loading...</span>
     </div>
-
-    <!-- Guest Count -->
-    <div class="field">
-      <div class="icon icon-guest"></div>
-      <span id="guestCountValue">Loading...</span>
-    </div>
-
-    <!-- Departure Time -->
-    <div class="field">
-      <div class="icon icon-departure"></div>
-      <span id="departureTimeValue">Loading...</span>
-    </div>
-
-    <!-- End Time -->
-    <div class="field">
-      <div class="icon icon-end"></div>
-      <span id="endTimeValue">Loading...</span>
+    
+    <!-- Right containers group -->
+    <div class="right-containers">
+      <!-- Guest Count -->
+      <div class="field">
+        <div class="icon icon-guest"></div>
+        <span id="guestCountValue">Loading...</span>
+      </div>
+      <!-- Departure Time -->
+      <div class="field">
+        <div class="icon icon-departure"></div>
+        <span id="departureTimeValue">Loading...</span>
+      </div>
+      <!-- End Time -->
+      <div class="field">
+        <div class="icon icon-end"></div>
+        <span id="endTimeValue">Loading...</span>
+      </div>
     </div>
   </div>
-
-  <!-- Load JavaScript -->
+  
+  <!-- Error logging -->
   <script>
-    window.addEventListener("error", function (event) {
+    window.addEventListener("error", function(event) {
       console.error("JavaScript Error:", event.message);
     });
   </script>
-
   <script src="script.js"></script>
-
 </body>
 </html>
