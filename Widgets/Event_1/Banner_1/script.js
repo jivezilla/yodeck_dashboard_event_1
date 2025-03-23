@@ -14,7 +14,7 @@ async function fetchCSV() {
   try {
     const response = await fetch(SHEET_CSV_URL);
     const csvText = await response.text();
-    console.log("CSV Fetch Successful:", csvText.substring(0, 100)); // Show first 100 chars
+    console.log("CSV Fetch Successful:", csvText.substring(0, 100));
     return csvText;
   } catch (error) {
     console.error("Failed to fetch CSV:", error);
@@ -30,9 +30,8 @@ function parseCSV(csvText) {
 
   for (let i = 0; i < csvText.length; i++) {
     const char = csvText[i];
-    
     if (char === '"' && csvText[i + 1] === '"') { 
-      cell += '"';  // Handle escaped quotes ("" -> ")
+      cell += '"';
       i++;
     } else if (char === '"') {
       insideQuotes = !insideQuotes;
@@ -52,8 +51,7 @@ function parseCSV(csvText) {
   if (row.length > 0) {
     rows.push(row);
   }
-
-  // Convert array to objects using headers
+  
   const headers = rows[0];
   return rows.slice(1).map(row => {
     let obj = {};
@@ -70,8 +68,8 @@ function parseCSV(csvText) {
 
 function getTodayInMDYYYY() {
   const today = new Date();
-  const M = today.getMonth() + 1; // No leading zero
-  const D = today.getDate();      // No leading zero
+  const M = today.getMonth() + 1;
+  const D = today.getDate();
   const YYYY = today.getFullYear();
   return `${M}/${D}/${YYYY}`;
 }
@@ -83,12 +81,8 @@ function getTodayInMDYYYY() {
 function findTodayRow(rows) {
   const todayStr = getTodayInMDYYYY();
   console.log("Today's date for filtering:", todayStr);
-
-  // Filter to get all rows matching today's date.
   const matchingRows = rows.filter(r => r["Date"]?.trim() === todayStr);
   console.log("Matching rows found:", matchingRows);
-
-  // Return the LAST one if it exists.
   return matchingRows.length === 0 ? null : matchingRows[matchingRows.length - 1];
 }
 
@@ -102,12 +96,10 @@ function renderData(eventData) {
                        " | " + (eventData["Venue Name"] || "(No venue)");
   const guestCount = eventData["Guest Count"] || "0";
   let endTime = eventData["Event Conclusion/Breakdown Time"] || "TBD";
-  
-  // Format end time to remove seconds (e.g., "9:30:00 PM" -> "9:30 PM")
   if (endTime !== "TBD") {
+    // Remove seconds from end time (e.g., "9:30:00 PM" -> "9:30 PM")
     endTime = endTime.replace(/:00(\s*[AP]M)/i, "$1");
   }
-
   document.getElementById("eventNameValue").textContent = combinedName;
   document.getElementById("guestCountValue").textContent = guestCount;
   document.getElementById("endTimeValue").textContent = endTime;
@@ -118,14 +110,12 @@ function renderData(eventData) {
  *****************************************************/
 
 /**
- * Determine the event start time from candidate columns.
- * If "Event Start Time" is provided but is time-only (e.g., "9:30:00 PM"),
- * combine it with today's date.
+ * Determine event start time. If the "Event Start Time" is time-only (e.g., "9:30:00 PM"),
+ * prepend today's date to create a valid Date.
  */
 function determineEventStartTime(row) {
   let startTimeStr = row["Event Start Time"]?.trim();
   if (startTimeStr) {
-    // If the string doesn't have a date part (i.e., just a time), prepend today's date.
     if (!/[\d\/-]/.test(startTimeStr.split(" ")[0])) {
       startTimeStr = getTodayInMDYYYY() + " " + startTimeStr;
     }
@@ -134,8 +124,6 @@ function determineEventStartTime(row) {
       return dt;
     }
   }
-  
-  // Otherwise, try the other candidates.
   const candidates = [];
   if (row["Meal Service Start Time"]?.trim()) {
     candidates.push({ time: new Date(getTodayInMDYYYY() + " " + row["Meal Service Start Time"].trim()), source: "Meal Service Start Time" });
@@ -149,9 +137,7 @@ function determineEventStartTime(row) {
   if (candidates.length === 0) {
     return null;
   }
-  // Sort candidates by time (earliest first)
   candidates.sort((a, b) => a.time - b.time);
-  // Special rule: if the earliest is Cocktail Hour and "Passed Hors D'oeuvres" equals "yes"
   if (candidates[0].source === "Cocktail Hour Start Time" &&
       row["Passed Hors D'oeuvres"] &&
       row["Passed Hors D'oeuvres"].toLowerCase() === "yes") {
@@ -182,9 +168,9 @@ function parseTravelTime(travelTimeStr) {
  * Extra Guest Buffer: 15 minutes per 50 guests above 100.
  */
 function calculateDepartureTime(eventStartTime, travelTimeStr, guestCount, baseBuffer) {
-  baseBuffer = baseBuffer || 5; // Default to 5 minutes.
+  baseBuffer = baseBuffer || 5;
   const travelMinutes = parseTravelTime(travelTimeStr);
-  const baseline = 120; // 2 hours = 120 minutes.
+  const baseline = 120;
   let extraGuestBuffer = 0;
   if (guestCount > 100) {
     extraGuestBuffer = 15 * Math.ceil((guestCount - 100) / 50);
@@ -194,7 +180,7 @@ function calculateDepartureTime(eventStartTime, travelTimeStr, guestCount, baseB
 }
 
 /**
- * Update the Departure Time display using the computed departure time.
+ * Update the Departure Time display.
  * Displays just the time (e.g., "2:24 PM") with no prefix.
  */
 function updateDepartureTimeDisplay(eventData) {
@@ -203,7 +189,7 @@ function updateDepartureTimeDisplay(eventData) {
     console.error("No valid event start time found.");
     return;
   }
-  const travelTime = localStorage.getItem("eventETA"); // e.g., "1 hr 5 min"
+  const travelTime = localStorage.getItem("eventETA");
   if (!travelTime) {
     console.error("No travel time available.");
     return;
@@ -224,7 +210,6 @@ async function init() {
   const csvText = await fetchCSV();
   const parsedRows = parseCSV(csvText);
 
-  // Find today's event row.
   const todayRow = findTodayRow(parsedRows);
 
   if (!todayRow) {
@@ -232,18 +217,14 @@ async function init() {
     return;
   }
 
-  // Render static data.
   renderData(todayRow);
-  // Compute and update departure time.
   updateDepartureTimeDisplay(todayRow);
 
-  // Auto-refresh every 30 seconds.
   setInterval(async () => {
     console.log("Refreshing data...");
     const newCSV = await fetchCSV();
     const newRows = parseCSV(newCSV);
     const newTodayRow = findTodayRow(newRows);
-
     if (!newTodayRow) {
       console.warn("No row found for today's date on refresh!");
       return;
@@ -252,7 +233,5 @@ async function init() {
     updateDepartureTimeDisplay(newTodayRow);
   }, 30000);
 }
-
-init();
 
 init();
