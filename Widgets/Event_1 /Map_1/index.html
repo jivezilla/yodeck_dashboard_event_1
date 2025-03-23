@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Event Travel & ETA Dashboard</title>
+  
+  <!-- Load travel.js first so initMap is defined -->
+  <script src="travel.js"></script>
+  
+  <!-- Then load Google Maps API with callback=initMap -->
+  <script
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB4b4Ho4rNwF9hyPKCYFYXNU6dXI550M6U&callback=initMap"
+    async defer>
+  </script>
+  
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h2 id="eta">Loading ETA...</h2>
+  <iframe id="mapFrame" src="" width="100%" height="600px" frameborder="0"></iframe>
+</body>
+</html>
