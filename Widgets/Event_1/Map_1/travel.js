@@ -211,7 +211,7 @@ function updateDashboard() {
           // Create an ETA container with the icon on the left and travel time text on the right.
           // Replace "path/to/eta-icon.png" with your actual PNG icon path.
           etaEl.innerHTML = '<div class="eta-container">' +
-                            '<img src="icons/travelTimeIcon.png" class="eta-icon" alt="ETA Icon">' +
+                            '<img src="icons/travelTimeicon.png" class="eta-icon" alt="ETA Icon">' +
                             '<span class="eta-text">' + travelTime + '</span>' +
                             '</div>';
           localStorage.setItem("eventETA", travelTime);
