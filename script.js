@@ -1,7 +1,7 @@
 console.log("Script is running!");
 
 // script.js for SHC Event Dashboard
-// Finds the LAST row matching today's date in the "Event Date" column.
+// Finds the LAST row matching today's date in the "Date" column.
 
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSOJpWzhoSZ2zgH1l9DcW3gc4RsbTsRqsSCTpGuHcOAfESVohlucF8QaJ6u58wQE0UilF7ChQXhbckE/pub?output=csv";
 
@@ -31,11 +31,11 @@ function parseCSV(csvText) {
   for (let i = 0; i < csvText.length; i++) {
     const char = csvText[i];
 
-    if (char === '"' && csvText[i + 1] === '"') {
-      cell += '"'; // Handle escaped quotes ("" -> ")
+    if (char === '"' && csvText[i + 1] === '"') { 
+      cell += '"';  // Handle escaped quotes ("" -> ")
       i++;
     } else if (char === '"') {
-      insideQuotes = !insideQuotes; // Toggle quotes flag
+      insideQuotes = !insideQuotes;
     } else if (char === ',' && !insideQuotes) {
       row.push(cell.trim());
       cell = '';
@@ -48,7 +48,7 @@ function parseCSV(csvText) {
       cell += char;
     }
   }
-
+  
   if (row.length > 0) {
     rows.push(row);
   }
@@ -86,26 +86,19 @@ function findTodayRow(rows) {
 
   // Filter to get all rows matching today's date.
   const matchingRows = rows.filter(r => r["Date"]?.trim() === todayStr);
-
-  // Log matching rows for debugging
   console.log("Matching rows found:", matchingRows);
 
-  // Return the LAST one if it exists
-  if (matchingRows.length === 0) {
-    return null;
-  } else {
-    return matchingRows[matchingRows.length - 1];
-  }
+  // Return the LAST one if it exists.
+  return matchingRows.length === 0 ? null : matchingRows[matchingRows.length - 1];
 }
 
 /*****************************************************
- * RENDER DATA (for event name, guest count, etc.)
+ * RENDER STATIC DATA
  *****************************************************/
 
 function renderData(eventData) {
   const eventName = eventData["Event Name"] || "(No event name)";
   const guestCount = eventData["Guest Count"] || "0";
-  // We'll override Departure Time with computed value
   const endTime = eventData["Event Conclusion/Breakdown Time"] || "TBD";
 
   document.getElementById("eventNameValue").textContent = eventName;
@@ -120,10 +113,11 @@ function renderData(eventData) {
 /**
  * Determine the event start time from candidate columns.
  * Priority:
- * 1. "Event Start Time" (if present)
- * 2. Otherwise, the earliest among "Meal Service Start Time", "Cocktail Hour Start Time",
- *    and "Passed Hors D'oeuvres Time Start". (If Cocktail Hour is earliest and
- *    "Passed Hors D'oeuvres" is "yes", use that.)
+ *   1. If "Event Start Time" is present, use it.
+ *   2. Otherwise, consider the earliest among:
+ *      "Meal Service Start Time", "Cocktail Hour Start Time", and "Passed Hors D'oeuvres Time Start".
+ *      Special rule: if Cocktail Hour is the earliest and "Passed Hors D'oeuvres" equals "yes",
+ *      then use that value.
  */
 function determineEventStartTime(row) {
   if (row["Event Start Time"] && row["Event Start Time"].trim() !== "") {
@@ -144,8 +138,9 @@ function determineEventStartTime(row) {
   }
   // Sort candidates by time (earliest first)
   candidates.sort((a, b) => a.time - b.time);
-  // Special rule: if the earliest is "Cocktail Hour Start Time" and "Passed Hors D'oeuvres" equals "yes"
-  if (candidates[0].source === "Cocktail Hour Start Time" && row["Passed Hors D'oeuvres"] &&
+  // Special rule for Cocktail Hour and Passed Hors D'oeuvres:
+  if (candidates[0].source === "Cocktail Hour Start Time" &&
+      row["Passed Hors D'oeuvres"] &&
       row["Passed Hors D'oeuvres"].toLowerCase() === "yes") {
     return candidates[0].time;
   }
@@ -153,8 +148,7 @@ function determineEventStartTime(row) {
 }
 
 /**
- * Parse a formatted travel time string (e.g., "1 hr 5 min" or "3 min")
- * into the total number of minutes.
+ * Parse a formatted travel time string (e.g., "1 hr 5 min" or "3 min") into total minutes.
  */
 function parseTravelTime(travelTimeStr) {
   let totalMinutes = 0;
@@ -171,13 +165,13 @@ function parseTravelTime(travelTimeStr) {
 
 /**
  * Calculate Departure Time using:
- * Departure Time = Event Start Time - (2hr baseline (120 min) + Travel Time + Base Buffer + Extra Guest Buffer)
+ * Departure Time = Event Start Time - (2hr baseline (120 min) + Travel Time + Base Buffer (5 min) + Extra Guest Buffer)
  * Extra Guest Buffer: 15 minutes per 50 guests above 100.
  */
 function calculateDepartureTime(eventStartTime, travelTimeStr, guestCount, baseBuffer) {
   baseBuffer = baseBuffer || 5; // Default to 5 minutes.
   const travelMinutes = parseTravelTime(travelTimeStr);
-  const baseline = 120; // 2 hours in minutes.
+  const baseline = 120; // 2 hours = 120 minutes.
   let extraGuestBuffer = 0;
   if (guestCount > 100) {
     extraGuestBuffer = 15 * Math.ceil((guestCount - 100) / 50);
@@ -187,7 +181,7 @@ function calculateDepartureTime(eventStartTime, travelTimeStr, guestCount, baseB
 }
 
 /**
- * Update the Departure Time display using travel time from localStorage.
+ * Update the Departure Time display using the computed departure time.
  */
 function updateDepartureTimeDisplay(eventData) {
   const eventStartTime = determineEventStartTime(eventData);
@@ -246,3 +240,4 @@ async function init() {
 }
 
 init();
+
