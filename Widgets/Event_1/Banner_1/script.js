@@ -3,7 +3,7 @@ console.log("Script is running!");
 // script.js for SHC Event Dashboard
 // Finds the LAST row matching today's date in the "Date" column.
 
-const SHEET_CSV_URL = "https://docs.github.com/..."
+const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSOJpWzhoSZ2zgH1l9DcW3gc4RsbTsRqsSCTpGuHcOAfESVohlucF8QaJ6u58wQE0UilF7ChQXhbckE/pub?output=csv"
 
  /*****************************************************
   * FETCH & PARSE CSV
