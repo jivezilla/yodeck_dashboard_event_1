@@ -1,7 +1,6 @@
 console.log("Script is running!");
 
 // script.js for SHC Event Dashboard
-// Finds the LAST row matching today's date in the "Event Date" column.
 
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSOJpWzhoSZ2zgH1l9DcW3gc4RsbTsRqsSCTpGuHcOAfESVohlucF8QaJ6u58wQE0UilF7ChQXhbckE/pub?output=csv";
 
@@ -84,10 +83,8 @@ function findTodayRow(rows) {
   const todayStr = getTodayInMDYYYY();
   console.log("Today's date for filtering:", todayStr);
 
-  // Filter to get all rows matching today's date.
+  // Filter to get all rows matching today's date in the "Date" column.
   const matchingRows = rows.filter(r => r["Date"]?.trim() === todayStr);
-
-  // Log matching rows for debugging
   console.log("Matching rows found:", matchingRows);
 
   // Return the LAST one if it exists
@@ -99,24 +96,113 @@ function findTodayRow(rows) {
 }
 
 /*****************************************************
- * RENDER DATA
+ * DEPARTURE TIME CALCULATIONS
+ *****************************************************/
+
+/**
+ * Determine the event start time from the row.
+ * Priority:
+ *   - If "Event Start Time" is provided (non-empty), use it.
+ *   - Otherwise, consider "Meal Service Start Time", "Cocktail Hour Start Time",
+ *     and "Passed Hors D'oeuvres Time Start" (if provided) and pick the earliest.
+ *   - Special: If the earliest candidate is "Cocktail Hour Start Time" and
+ *     "Passed Hors D'oeuvres" equals "yes" (case-insensitive), use it.
+ */
+function determineEventStartTime(row) {
+  if (row["Event Start Time"] && row["Event Start Time"].trim() !== "") {
+    return new Date(row["Event Start Time"]);
+  }
+  
+  const candidates = [];
+  if (row["Meal Service Start Time"] && row["Meal Service Start Time"].trim() !== "") {
+    candidates.push({ time: new Date(row["Meal Service Start Time"]), source: "Meal Service Start Time" });
+  }
+  if (row["Cocktail Hour Start Time"] && row["Cocktail Hour Start Time"].trim() !== "") {
+    candidates.push({ time: new Date(row["Cocktail Hour Start Time"]), source: "Cocktail Hour Start Time" });
+  }
+  if (row["Passed Hors D'oeuvres Time Start"] && row["Passed Hors D'oeuvres Time Start"].trim() !== "") {
+    candidates.push({ time: new Date(row["Passed Hors D'oeuvres Time Start"]), source: "Passed Hors D'oeuvres Time Start" });
+  }
+  
+  if (candidates.length === 0) return null;
+  
+  candidates.sort((a, b) => a.time - b.time);
+  
+  if (candidates[0].source === "Cocktail Hour Start Time" &&
+      row["Passed Hors D'oeuvres"] && row["Passed Hors D'oeuvres"].toLowerCase() === "yes") {
+    return candidates[0].time;
+  }
+  return candidates[0].time;
+}
+
+/**
+ * Parse a formatted travel time string (e.g., "1 hr 5 min" or "3 min") into total minutes.
+ */
+function parseTravelTime(travelTimeStr) {
+  let totalMinutes = 0;
+  const hrMatch = travelTimeStr.match(/(\d+)\s*hr/);
+  if (hrMatch) {
+    totalMinutes += parseInt(hrMatch[1], 10) * 60;
+  }
+  const minMatch = travelTimeStr.match(/(\d+)\s*min/);
+  if (minMatch) {
+    totalMinutes += parseInt(minMatch[1], 10);
+  }
+  return totalMinutes;
+}
+
+/**
+ * Calculate the departure time.
+ * Equation:
+ *   Departure Time = Event Start Time - (Baseline 2hr + Travel Time + Base Buffer (5 min) + Extra Guest Buffer)
+ * Extra Guest Buffer: 15 minutes per 50 guests after 100.
+ */
+function calculateDepartureTime(eventStartTime, travelTimeStr, guestCount, baseBuffer = 5) {
+  const travelMinutes = parseTravelTime(travelTimeStr);
+  const baseline = 120; // 2 hours = 120 minutes
+  let extraGuestBuffer = 0;
+  const count = parseInt(guestCount, 10);
+  if (count > 100) {
+    extraGuestBuffer = 15 * Math.ceil((count - 100) / 50);
+  }
+  const totalSubtract = baseline + travelMinutes + baseBuffer + extraGuestBuffer;
+  return new Date(eventStartTime.getTime() - totalSubtract * 60000);
+}
+
+/*****************************************************
+ * RENDER DATA & DEPARTURE TIME
  *****************************************************/
 
 function renderData(eventData) {
   const eventName = eventData["Event Name"] || "(No event name)";
   const guestCount = eventData["Guest Count"] || "0";
-  const departureTime = eventData["Departure Time"] || "TBD";
-  const endTime = eventData["Event Conclusion/Breakdown Time"] || "TBD"; // fixed here
+  const endTime = eventData["Event Conclusion/Breakdown Time"] || "TBD";
 
   document.getElementById("eventNameValue").textContent = eventName;
   document.getElementById("guestCountValue").textContent = guestCount;
-  document.getElementById("departureTimeValue").textContent = departureTime;
   document.getElementById("endTimeValue").textContent = endTime;
+  
+  // Now calculate departure time using our formula.
+  const eventStartTime = determineEventStartTime(eventData);
+  if (!eventStartTime) {
+    document.getElementById("departureTimeValue").textContent = "TBD (No valid event start time)";
+    return;
+  }
+  
+  // Read travel time from localStorage (updated by the travel dashboard)
+  const travelTime = localStorage.getItem("eventETA"); // e.g., "1 hr 5 min"
+  if (!travelTime) {
+    document.getElementById("departureTimeValue").textContent = "TBD (No travel time)";
+    return;
+  }
+  
+  const departureTime = calculateDepartureTime(eventStartTime, travelTime, guestCount, 5);
+  const formattedDepartureTime = departureTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  document.getElementById("departureTimeValue").textContent = "Leave by: " + formattedDepartureTime;
 }
 
-
 /*****************************************************
- * MAIN INIT
+ * MAIN INIT & AUTO-REFRESH
  *****************************************************/
 
 async function init() {
@@ -125,15 +211,14 @@ async function init() {
   const csvText = await fetchCSV();
   const parsedRows = parseCSV(csvText);
 
-  // Find today's event
+  // Find today's event row
   const todayRow = findTodayRow(parsedRows);
-
   if (!todayRow) {
     console.warn("No row found for today's date!");
     return;
   }
 
-  // Render that row
+  // Render the data and calculate departure time
   renderData(todayRow);
 
   // Auto-refresh every 30 seconds
@@ -142,7 +227,6 @@ async function init() {
     const newCSV = await fetchCSV();
     const newRows = parseCSV(newCSV);
     const newTodayRow = findTodayRow(newRows);
-
     if (!newTodayRow) {
       console.warn("No row found for today's date on refresh!");
       return;
