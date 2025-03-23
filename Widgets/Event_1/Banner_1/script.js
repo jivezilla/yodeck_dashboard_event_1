@@ -208,8 +208,7 @@ function updateDepartureTimeDisplay(eventData) {
   }
   const guestCount = parseInt(eventData["Guest Count"], 10) || 0;
   const departureTime = calculateDepartureTime(eventStartTime, travelTime, guestCount, 5);
-  const formattedDepartureTime = departureTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  document.getElementById("departureTimeValue").textContent = "Leave by: " + formattedDepartureTime;
+  document.getElementById("departureTimeValue").textContent = departureTime;
 }
 
 /*****************************************************
