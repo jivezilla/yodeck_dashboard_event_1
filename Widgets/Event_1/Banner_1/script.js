@@ -3,11 +3,11 @@ console.log("Script is running!");
 // script.js for SHC Event Dashboard
 // Finds the LAST row matching today's date in the "Date" column.
 
-const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSOJpWzhoSZ2zgH1l9DcW3gc4RsbTsRqsSCTpGuHcOAfESVohlucF8QaJ6u58wQE0UilF7ChQXhbckE/pub?output=csv"
+const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSOJpWzhoSZ2zgH1l9DcW3gc4RsbTsRqsSCTpGuHcOAfESVohlucF8QaJ6u58wQE0UilF7ChQXhbckE/pub?output=csv";
 
- /*****************************************************
-  * FETCH & PARSE CSV
-  *****************************************************/
+/*****************************************************
+ * FETCH & PARSE CSV
+ *****************************************************/
 
 async function fetchCSV() {
   console.log("Fetching CSV data...");
@@ -97,16 +97,18 @@ function findTodayRow(rows) {
  *****************************************************/
 
 function renderData(eventData) {
-  const eventName = eventData["Event Name"] || "(No event name)";
+  // Combine Event Name and Venue Name as "[Event Name] | [Venue Name]"
+  const combinedName = (eventData["Event Name"] || "(No event name)") +
+                       " | " + (eventData["Venue Name"] || "(No venue)");
   const guestCount = eventData["Guest Count"] || "0";
   let endTime = eventData["Event Conclusion/Breakdown Time"] || "TBD";
   
-  // Format the end time to remove seconds (e.g., "9:30:00 PM" -> "9:30 PM")
-  if(endTime !== "TBD") {
-    endTime = endTime.replace(/:00(?=\s*[AP]M)/i, "");
+  // Format end time to remove seconds (e.g., "9:30:00 PM" -> "9:30 PM")
+  if (endTime !== "TBD") {
+    endTime = endTime.replace(/:00(\s*[AP]M)/i, "$1");
   }
 
-  document.getElementById("eventNameValue").textContent = eventName;
+  document.getElementById("eventNameValue").textContent = combinedName;
   document.getElementById("guestCountValue").textContent = guestCount;
   document.getElementById("endTimeValue").textContent = endTime;
 }
@@ -123,9 +125,8 @@ function renderData(eventData) {
 function determineEventStartTime(row) {
   let startTimeStr = row["Event Start Time"]?.trim();
   if (startTimeStr) {
-    // Check if startTimeStr contains a date (assume a date will have a slash or dash)
+    // If the string doesn't have a date part (i.e., just a time), prepend today's date.
     if (!/[\d\/-]/.test(startTimeStr.split(" ")[0])) {
-      // If not, prepend today's date
       startTimeStr = getTodayInMDYYYY() + " " + startTimeStr;
     }
     const dt = new Date(startTimeStr);
@@ -134,7 +135,7 @@ function determineEventStartTime(row) {
     }
   }
   
-  // If Event Start Time is empty or invalid, try the other candidates.
+  // Otherwise, try the other candidates.
   const candidates = [];
   if (row["Meal Service Start Time"]?.trim()) {
     candidates.push({ time: new Date(getTodayInMDYYYY() + " " + row["Meal Service Start Time"].trim()), source: "Meal Service Start Time" });
@@ -194,6 +195,7 @@ function calculateDepartureTime(eventStartTime, travelTimeStr, guestCount, baseB
 
 /**
  * Update the Departure Time display using the computed departure time.
+ * Displays just the time (e.g., "2:24 PM") with no prefix.
  */
 function updateDepartureTimeDisplay(eventData) {
   const eventStartTime = determineEventStartTime(eventData);
@@ -208,7 +210,8 @@ function updateDepartureTimeDisplay(eventData) {
   }
   const guestCount = parseInt(eventData["Guest Count"], 10) || 0;
   const departureTime = calculateDepartureTime(eventStartTime, travelTime, guestCount, 5);
-  document.getElementById("departureTimeValue").textContent = departureTime;
+  const formattedDepartureTime = departureTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  document.getElementById("departureTimeValue").textContent = formattedDepartureTime;
 }
 
 /*****************************************************
@@ -249,5 +252,7 @@ async function init() {
     updateDepartureTimeDisplay(newTodayRow);
   }, 30000);
 }
+
+init();
 
 init();
