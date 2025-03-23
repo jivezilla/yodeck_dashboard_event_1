@@ -3,11 +3,11 @@ console.log("Script is running!");
 // script.js for SHC Event Dashboard
 // Finds the LAST row matching today's date in the "Date" column.
 
-const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSOJpWzhoSZ2zgH1l9DcW3gc4RsbTsRqsSCTpGuHcOAfESVohlucF8QaJ6u58wQE0UilF7ChQXhbckE/pub?output=csv";
+const SHEET_CSV_URL = "https://docs.github.com/..."
 
-/*****************************************************
- * FETCH & PARSE CSV
- *****************************************************/
+ /*****************************************************
+  * FETCH & PARSE CSV
+  *****************************************************/
 
 async function fetchCSV() {
   console.log("Fetching CSV data...");
@@ -30,7 +30,7 @@ function parseCSV(csvText) {
 
   for (let i = 0; i < csvText.length; i++) {
     const char = csvText[i];
-
+    
     if (char === '"' && csvText[i + 1] === '"') { 
       cell += '"';  // Handle escaped quotes ("" -> ")
       i++;
@@ -99,7 +99,12 @@ function findTodayRow(rows) {
 function renderData(eventData) {
   const eventName = eventData["Event Name"] || "(No event name)";
   const guestCount = eventData["Guest Count"] || "0";
-  const endTime = eventData["Event Conclusion/Breakdown Time"] || "TBD";
+  let endTime = eventData["Event Conclusion/Breakdown Time"] || "TBD";
+  
+  // Format the end time to remove seconds (e.g., "9:30:00 PM" -> "9:30 PM")
+  if(endTime !== "TBD") {
+    endTime = endTime.replace(/:00(?=\s*[AP]M)/i, "");
+  }
 
   document.getElementById("eventNameValue").textContent = eventName;
   document.getElementById("guestCountValue").textContent = guestCount;
@@ -112,33 +117,40 @@ function renderData(eventData) {
 
 /**
  * Determine the event start time from candidate columns.
- * Priority:
- *   1. If "Event Start Time" is present, use it.
- *   2. Otherwise, consider the earliest among:
- *      "Meal Service Start Time", "Cocktail Hour Start Time", and "Passed Hors D'oeuvres Time Start".
- *      Special rule: if Cocktail Hour is the earliest and "Passed Hors D'oeuvres" equals "yes",
- *      then use that value.
+ * If "Event Start Time" is provided but is time-only (e.g., "9:30:00 PM"),
+ * combine it with today's date.
  */
 function determineEventStartTime(row) {
-  if (row["Event Start Time"] && row["Event Start Time"].trim() !== "") {
-    return new Date(row["Event Start Time"]);
+  let startTimeStr = row["Event Start Time"]?.trim();
+  if (startTimeStr) {
+    // Check if startTimeStr contains a date (assume a date will have a slash or dash)
+    if (!/[\d\/-]/.test(startTimeStr.split(" ")[0])) {
+      // If not, prepend today's date
+      startTimeStr = getTodayInMDYYYY() + " " + startTimeStr;
+    }
+    const dt = new Date(startTimeStr);
+    if (!isNaN(dt.getTime())) {
+      return dt;
+    }
   }
+  
+  // If Event Start Time is empty or invalid, try the other candidates.
   const candidates = [];
-  if (row["Meal Service Start Time"] && row["Meal Service Start Time"].trim() !== "") {
-    candidates.push({ time: new Date(row["Meal Service Start Time"]), source: "Meal Service Start Time" });
+  if (row["Meal Service Start Time"]?.trim()) {
+    candidates.push({ time: new Date(getTodayInMDYYYY() + " " + row["Meal Service Start Time"].trim()), source: "Meal Service Start Time" });
   }
-  if (row["Cocktail Hour Start Time"] && row["Cocktail Hour Start Time"].trim() !== "") {
-    candidates.push({ time: new Date(row["Cocktail Hour Start Time"]), source: "Cocktail Hour Start Time" });
+  if (row["Cocktail Hour Start Time"]?.trim()) {
+    candidates.push({ time: new Date(getTodayInMDYYYY() + " " + row["Cocktail Hour Start Time"].trim()), source: "Cocktail Hour Start Time" });
   }
-  if (row["Passed Hors D'oeuvres Time Start"] && row["Passed Hors D'oeuvres Time Start"].trim() !== "") {
-    candidates.push({ time: new Date(row["Passed Hors D'oeuvres Time Start"]), source: "Passed Hors D'oeuvres Time Start" });
+  if (row["Passed Hors D'oeuvres Time Start"]?.trim()) {
+    candidates.push({ time: new Date(getTodayInMDYYYY() + " " + row["Passed Hors D'oeuvres Time Start"].trim()), source: "Passed Hors D'oeuvres Time Start" });
   }
   if (candidates.length === 0) {
     return null;
   }
   // Sort candidates by time (earliest first)
   candidates.sort((a, b) => a.time - b.time);
-  // Special rule for Cocktail Hour and Passed Hors D'oeuvres:
+  // Special rule: if the earliest is Cocktail Hour and "Passed Hors D'oeuvres" equals "yes"
   if (candidates[0].source === "Cocktail Hour Start Time" &&
       row["Passed Hors D'oeuvres"] &&
       row["Passed Hors D'oeuvres"].toLowerCase() === "yes") {
