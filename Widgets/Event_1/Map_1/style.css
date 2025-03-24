@@ -5,15 +5,15 @@
   box-sizing: border-box;
 }
 
-/* Overall page: fixed size 500px x 600px with 10px padding */
+/* Overall page: 500px wide, 600px high with 10px padding */
 body {
   width: 500px;
   height: 600px;
   padding: 10px;
+  margin: auto;
   background-color: #c47725;
   color: #fff;
   font-family: "Instrument Serif", serif;
-  margin: auto;
   position: relative;
 }
 
@@ -24,18 +24,11 @@ body {
   margin-bottom: 10px;
 }
 
-.eta-icon {
-  width: 50px !important;
-  height: auto !important;
-}
-
-/* Map iframe: force exact dimensions 480px x 480px, centered */
-#iframeContainer, 
-#iframe, 
-#mapFrame {
+/* Custom map container: fixed at 480px by 480px, centered */
+#customMap {
   width: 480px !important;
   height: 480px !important;
-  border: none;
-  display: block;
   margin: 0 auto;
+  border: none;
+  padding: 0;
 }
