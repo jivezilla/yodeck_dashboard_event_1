@@ -240,11 +240,12 @@ function initCustomMap() {
         const mapOptions = {
           center: { lat: centerLat, lng: centerLng },
           zoom: 14,
-          disableDefaultUI: true,
+          disableDefaultUI: false,
           zoomControl: false,
           mapTypeControl: false,
           streetViewControl: false,
           fullscreenControl: false,
+          directionsCard: false,
           styles: [ 
             /* Insert your custom style array here to further hide features if needed.
                For example, to hide POIs:
