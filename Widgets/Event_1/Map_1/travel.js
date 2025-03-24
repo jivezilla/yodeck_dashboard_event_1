@@ -1,16 +1,17 @@
 console.log("Script is running!");
 
-// script.js for SHC Event Dashboard / Map Widget
-// Finds the LAST row matching today's date in the "Date" column.
-
+// Constants
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSOJpWzhoSZ2zgH1l9DcW3gc4RsbTsRqsSCTpGuHcOAfESVohlucF8QaJ6u58wQE0UilF7ChQXhbckE/pub?output=csv";
 const GOOGLE_API_KEY = "AIzaSyB4b4Ho4rNwF9hyPKCYFYXNU6dXI550M6U";
 const ORIGIN_ADDRESS = "221 Corley Mill Rd, Lexington, SC 29072";
 
-/*****************************************************
- * FETCH & PARSE CSV
- *****************************************************/
+/*********************
+ * Helper Functions
+ *********************/
 
+/**
+ * Fetch CSV data from Google Sheets.
+ */
 async function fetchCSV() {
   console.log("Fetching CSV data...");
   try {
@@ -24,12 +25,14 @@ async function fetchCSV() {
   }
 }
 
+/**
+ * Parse CSV text into an array of objects.
+ */
 function parseCSV(csvText) {
   const rows = [];
   let insideQuotes = false;
   let row = [];
   let cell = '';
-
   for (let i = 0; i < csvText.length; i++) {
     const char = csvText[i];
     if (char === '"' && csvText[i + 1] === '"') {
@@ -62,10 +65,9 @@ function parseCSV(csvText) {
   });
 }
 
-/*****************************************************
- * HELPER: Today in M/D/YYYY
- *****************************************************/
-
+/**
+ * Return today's date in M/D/YYYY format.
+ */
 function getTodayInMDYYYY() {
   const today = new Date();
   const M = today.getMonth() + 1;
@@ -74,10 +76,9 @@ function getTodayInMDYYYY() {
   return `${M}/${D}/${YYYY}`;
 }
 
-/*****************************************************
- * FIND LAST ROW FOR TODAY
- *****************************************************/
-
+/**
+ * Find the last row in the CSV data for today.
+ */
 function findTodayRow(rows) {
   const todayStr = getTodayInMDYYYY();
   console.log("Today's date for filtering:", todayStr);
@@ -86,9 +87,134 @@ function findTodayRow(rows) {
   return matchingRows.length === 0 ? null : matchingRows[matchingRows.length - 1];
 }
 
-/*****************************************************
- * RENDER STATIC DATA (for Banner_1 only)
- *****************************************************/
+/**
+ * Geocode an address using the Maps JavaScript API (client-side).
+ */
+function geocodeClientSide(address) {
+  return new Promise(function(resolve, reject) {
+    console.log("Geocoding: " + address);
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ address: address }, function(results, status) {
+      if (status === "OK") {
+        resolve(results[0].geometry.location);
+      } else {
+        console.error("Geocoding failed:", status);
+        resolve(null);
+      }
+    });
+  });
+}
+
+/**
+ * Format a raw duration string (e.g., "165s") into a user-friendly string.
+ */
+function formatDuration(durationStr) {
+  const seconds = parseInt(durationStr.replace(/s/i, ""), 10);
+  if (isNaN(seconds)) {
+    return durationStr;
+  }
+  if (seconds < 3600) {
+    const minutes = Math.round(seconds / 60);
+    return minutes + " min";
+  } else {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.round((seconds % 3600) / 60);
+    return hours + " hr " + minutes + " min";
+  }
+}
+
+/**
+ * Use the new Routes API to get travel time.
+ */
+function getTravelTime(originCoords, destCoords) {
+  return new Promise(function(resolve, reject) {
+    if (!originCoords || !destCoords) {
+      reject("Invalid coordinates");
+      return;
+    }
+    const url = "https://routes.googleapis.com/directions/v2:computeRoutes?key=" + GOOGLE_API_KEY;
+    const requestBody = {
+      origin: { location: { latLng: { latitude: originCoords.lat(), longitude: originCoords.lng() } } },
+      destination: { location: { latLng: { latitude: destCoords.lat(), longitude: destCoords.lng() } } },
+      travelMode: "DRIVE",
+      routingPreference: "TRAFFIC_AWARE",
+      computeAlternativeRoutes: false,
+      routeModifiers: { avoidHighways: false, avoidTolls: false, avoidFerries: false },
+      languageCode: "en-US",
+      units: "IMPERIAL"
+    };
+
+    fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-FieldMask": "routes.duration"
+      },
+      body: JSON.stringify(requestBody)
+    })
+      .then(function(response) {
+        if (!response.ok) {
+          reject("Routes API request failed with status " + response.status);
+          return;
+        }
+        return response.json();
+      })
+      .then(function(data) {
+        if (data.routes && data.routes.length > 0) {
+          const rawDuration = data.routes[0].duration;
+          const formatted = formatDuration(rawDuration);
+          resolve(formatted);
+        } else {
+          reject("No valid route found in response.");
+        }
+      })
+      .catch(function(err) {
+        reject("Routes API error: " + err);
+      });
+  });
+}
+
+/**
+ * Update the ETA and Map.
+ * This function is common to both Banner and Map widgets.
+ */
+function updateEtaAndMap(eventData) {
+  const etaEl = document.getElementById("eta");
+  const mapEl = document.getElementById("mapFrame");
+  if (!etaEl || !mapEl) return;
+  const destAddress = eventData["Address"] + ", " + eventData["City"] + ", " + eventData["State"] + " " + eventData["Zipcode"];
+  Promise.all([ geocodeClientSide(ORIGIN_ADDRESS), geocodeClientSide(destAddress) ])
+    .then(function(coordsArray) {
+      const originCoords = coordsArray[0];
+      const destCoords = coordsArray[1];
+      if (!originCoords || !destCoords) {
+        etaEl.textContent = "Address not found";
+        mapEl.src = "";
+        return;
+      }
+      getTravelTime(originCoords, destCoords)
+        .then(function(travelTime) {
+          // Ensure the travel time icon filename matches exactly.
+          etaEl.innerHTML = '<div class="eta-container">' +
+                            '<img src="icons/travelTimeicon.png" class="eta-icon" alt="ETA Icon">' +
+                            '<span class="eta-text">' + travelTime + '</span>' +
+                            '</div>';
+          localStorage.setItem("eventETA", travelTime);
+        })
+        .catch(function(error) {
+          etaEl.textContent = error;
+        });
+      const googleMapsEmbedURL = "https://www.google.com/maps/embed/v1/directions?key=" + GOOGLE_API_KEY +
+                                 "&origin=" + encodeURIComponent(ORIGIN_ADDRESS) +
+                                 "&destination=" + encodeURIComponent(destAddress) +
+                                 "&mode=driving";
+      mapEl.src = googleMapsEmbedURL;
+    });
+}
+
+/**
+ * For Banner-specific updates: render static data and update departure time.
+ */
 function renderData(eventData) {
   const eventNameEl = document.getElementById("eventNameValue");
   const guestCountEl = document.getElementById("guestCountValue");
@@ -105,19 +231,38 @@ function renderData(eventData) {
   if (endTimeEl) {
     let endTime = eventData["Event Conclusion/Breakdown Time"] || "TBD";
     if (endTime !== "TBD") {
-      // Remove seconds (":00") from end time.
       endTime = endTime.replace(/:00(\s*[AP]M)/i, "$1");
     }
     endTimeEl.textContent = endTime;
   }
 }
 
-/*****************************************************
- * DEPARTURE TIME CALCULATION (for Banner_1 only)
- *****************************************************/
+/**
+ * For Banner-specific updates: calculate and update departure time.
+ * Only runs if the corresponding DOM element exists.
+ */
+function updateDepartureTimeDisplay(eventData) {
+  const departureTimeEl = document.getElementById("departureTimeValue");
+  if (!departureTimeEl) return; // Skip if not in DOM (i.e. in Map widget)
+  const eventStartTime = determineEventStartTime(eventData);
+  if (!eventStartTime) {
+    console.error("No valid event start time found.");
+    return;
+  }
+  const travelTime = localStorage.getItem("eventETA");
+  if (!travelTime) {
+    console.error("No travel time available.");
+    return;
+  }
+  const guestCount = parseInt(eventData["Guest Count"], 10) || 0;
+  const departureTime = calculateDepartureTime(eventStartTime, travelTime, guestCount, 5);
+  const formattedDepartureTime = departureTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  departureTimeEl.textContent = formattedDepartureTime;
+}
 
 /**
- * If "Event Start Time" is time-only (e.g., "9:30:00 PM"), prepend today's date.
+ * Determine the event start time from candidate columns.
+ * If the "Event Start Time" is time-only (e.g., "9:30:00 PM"), prepend today's date.
  */
 function determineEventStartTime(row) {
   let startTimeStr = row["Event Start Time"]?.trim();
@@ -148,6 +293,9 @@ function determineEventStartTime(row) {
   return candidates[0].time;
 }
 
+/**
+ * Parse a formatted travel time string (e.g., "1 hr 5 min" or "3 min") into total minutes.
+ */
 function parseTravelTime(travelTimeStr) {
   let totalMinutes = 0;
   const hrMatch = travelTimeStr.match(/(\d+)\s*hr/);
@@ -158,8 +306,8 @@ function parseTravelTime(travelTimeStr) {
 }
 
 /**
- * Calculate Departure Time = Event Start Time - (120 + Travel Time + 5 + Extra Buffer)
- * Extra Buffer: 15 min per 50 guests above 100.
+ * Calculate Departure Time = Event Start Time - (120 + Travel Time + 5 + Extra Guest Buffer)
+ * Extra Guest Buffer: 15 min per 50 guests above 100.
  */
 function calculateDepartureTime(eventStartTime, travelTimeStr, guestCount, baseBuffer) {
   baseBuffer = baseBuffer || 5;
@@ -173,70 +321,11 @@ function calculateDepartureTime(eventStartTime, travelTimeStr, guestCount, baseB
   return new Date(eventStartTime.getTime() - totalSubtract * 60000);
 }
 
-function updateDepartureTimeDisplay(eventData) {
-  const departureTimeEl = document.getElementById("departureTimeValue");
-  if (!departureTimeEl) return; // Skip if element not found (e.g., in Map_1)
-  const eventStartTime = determineEventStartTime(eventData);
-  if (!eventStartTime) {
-    console.error("No valid event start time found.");
-    return;
-  }
-  const travelTime = localStorage.getItem("eventETA");
-  if (!travelTime) {
-    console.error("No travel time available.");
-    return;
-  }
-  const guestCount = parseInt(eventData["Guest Count"], 10) || 0;
-  const departureTime = calculateDepartureTime(eventStartTime, travelTime, guestCount, 5);
-  const formattedDepartureTime = departureTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-  departureTimeEl.textContent = formattedDepartureTime;
-}
-
-/*****************************************************
- * ETA & MAP UPDATE (common to both Banner_1 and Map_1)
- *****************************************************/
-
-function updateEtaAndMap(eventData) {
-  const etaEl = document.getElementById("eta");
-  const mapEl = document.getElementById("mapFrame");
-  if (!etaEl || !mapEl) return;
-  const destAddress = eventData["Address"] + ", " + eventData["City"] + ", " + eventData["State"] + " " + eventData["Zipcode"];
-  Promise.all([
-    geocodeClientSide(ORIGIN_ADDRESS),
-    geocodeClientSide(destAddress)
-  ]).then(function(coordsArray) {
-    const originCoords = coordsArray[0];
-    const destCoords = coordsArray[1];
-    if (!originCoords || !destCoords) {
-      etaEl.textContent = "Address not found";
-      mapEl.src = "";
-      return;
-    }
-    getTravelTime(originCoords, destCoords).then(function(travelTime) {
-      // Note: use the correct file name for your travel time icon; adjust case as necessary.
-      etaEl.innerHTML = '<div class="eta-container">' +
-                        '<img src="icons/travelTimeicon.png" class="eta-icon" alt="ETA Icon">' +
-                        '<span class="eta-text">' + travelTime + '</span>' +
-                        '</div>';
-      localStorage.setItem("eventETA", travelTime);
-    }).catch(function(error) {
-      etaEl.textContent = error;
-    });
-    const googleMapsEmbedURL = "https://www.google.com/maps/embed/v1/directions?key=" + GOOGLE_API_KEY +
-      "&origin=" + encodeURIComponent(ORIGIN_ADDRESS) +
-      "&destination=" + encodeURIComponent(destAddress) +
-      "&mode=driving";
-    mapEl.src = googleMapsEmbedURL;
-  });
-}
-
-/*****************************************************
+/*********************
  * MAIN INIT
- *****************************************************/
-
+ *********************/
 async function init() {
   console.log("Initializing event dashboard...");
-
   const csvText = await fetchCSV();
   const parsedRows = parseCSV(csvText);
   const todayRow = findTodayRow(parsedRows);
@@ -244,10 +333,10 @@ async function init() {
     console.warn("No row found for today's date!");
     return;
   }
-  // Only run renderData and updateDepartureTimeDisplay if their elements exist.
+  // For Banner widget, render static data and departure time.
   if (document.getElementById("eventNameValue")) renderData(todayRow);
   if (document.getElementById("departureTimeValue")) updateDepartureTimeDisplay(todayRow);
-  // Always update ETA and map.
+  // For both Banner and Map widgets, update ETA and Map.
   updateEtaAndMap(todayRow);
 
   setInterval(async () => {
@@ -265,4 +354,5 @@ async function init() {
   }, 30000);
 }
 
-init();
+// Attach initMap to window so Google Maps API callback can call it.
+window.initMap = init;
