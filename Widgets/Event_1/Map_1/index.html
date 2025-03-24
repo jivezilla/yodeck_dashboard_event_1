@@ -4,15 +4,15 @@
   <meta charset="UTF-8" />
   <title>Event Travel & ETA Dashboard</title>
   
-  <!-- Load travel.js first so initMap is defined -->
+  <!-- Load travel.js first so that window.initMap and window.geocodeClientSide are defined -->
   <script src="travel.js"></script>
   
-  <!-- Then load Google Maps API with callback=initMap -->
+  <!-- Then load the Google Maps API with the callback -->
   <script
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB4b4Ho4rNwF9hyPKCYFYXNU6dXI550M6U&callback=initMap"
     async defer>
   </script>
-
+  
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
