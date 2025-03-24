@@ -32,7 +32,7 @@ body {
 #eta {
   margin-bottom: 10px;
   text-align: center;
-  font-size: 40px;
+  font-size: 50px;
 }
 
 /* Force the map embed (iframe) to be 480px by 480px */
@@ -40,6 +40,6 @@ iframe#mapFrame {
   width: 480px !important;
   height: 480px !important;
   border: none;
-  display: block;
-  margin: 0 auto;
+  margin: 0 !important;
+  padding: 0 !important;
 }
