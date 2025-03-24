@@ -1,5 +1,3 @@
-/* style.css for Map_1 */
-
 /* Reset */
 * {
   margin: 0;
@@ -7,30 +5,32 @@
   box-sizing: border-box;
 }
 
-/* Entire page: fixed at 500px wide and 600px high with 10px padding */
+/* Overall page: fixed size 500px x 600px with 10px padding */
 body {
   width: 500px;
   height: 600px;
   padding: 10px;
-  margin: auto;
   background-color: #c47725;
   color: #fff;
   font-family: "Instrument Serif", serif;
+  margin: auto;
   position: relative;
 }
 
-/* ETA text styling */
+/* ETA heading */
 #eta {
   text-align: center;
   font-size: 40px;
   margin-bottom: 10px;
 }
 
-/* Custom map container: force dimensions to 480px x 480px, centered */
-#customMap {
-  width: 480px;
-  height: 480px;
-  margin: 0 auto;
+/* Map iframe: force exact dimensions 480px x 480px, centered */
+#iframeContainer, 
+#iframe, 
+#mapFrame {
+  width: 480px !important;
+  height: 480px !important;
   border: none;
-  padding: 0;
+  display: block;
+  margin: 0 auto;
 }
