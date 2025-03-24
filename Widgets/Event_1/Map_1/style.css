@@ -26,10 +26,10 @@ body {
   font-size: 40px;
 }
 
-/* Style the map embed (iframe) */
+/* Force the map embed (iframe) to be 480px by 480px */
 iframe#mapFrame {
-  width: 480px;
-  height: 480px;
+  width: 480px !important;
+  height: 480px !important;
   border: none;
   display: block;
   margin: 0 auto;
