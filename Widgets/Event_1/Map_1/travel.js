@@ -121,6 +121,7 @@ function formatDuration(durationStr) {
 
 /**
  * Get travel time from origin to destination using the new Routes API.
+ * (This function is still available if needed elsewhere.)
  */
 function getTravelTime(originCoords, destCoords) {
   return new Promise(function(resolve, reject) {
@@ -169,41 +170,82 @@ function getTravelTime(originCoords, destCoords) {
   });
 }
 
-/**
- * Update the ETA and Map (for both widgets).
- * This function still updates the ETA element.
- */
-function updateEtaAndMap(eventData) {
-  const etaEl = document.getElementById("eta");
-  // In a custom map setup, we won't use an iframe; if your Map_1 index.html has a "customMap" div instead, ignore mapFrame.
-  if (!etaEl) return;
-  const destAddress = eventData["Address"] + ", " + eventData["City"] + ", " + eventData["State"] + " " + eventData["Zipcode"];
-  Promise.all([ geocodeClientSide(ORIGIN_ADDRESS), geocodeClientSide(destAddress) ])
-    .then(function(coordsArray) {
-      const originCoords = coordsArray[0];
-      const destCoords = coordsArray[1];
-      if (!originCoords || !destCoords) {
-        etaEl.textContent = "Address not found";
-        return;
-      }
-      getTravelTime(originCoords, destCoords)
-        .then(function(travelTime) {
-          // Make sure the icon filename matches your file (case sensitive)
-          etaEl.innerHTML = '<div class="eta-container">' +
-                            '<img src="icons/travelTimeicon.png" class="eta-icon" alt="ETA Icon">' +
-                            '<span class="eta-text">' + travelTime + '</span>' +
-                            '</div>';
-          localStorage.setItem("eventETA", travelTime);
-        })
-        .catch(function(error) {
-          etaEl.textContent = error;
-        });
-    });
+/*********************
+ * Custom Map Initialization (Steps 3 & 4)
+ *********************/
+function initCustomMap() {
+  console.log("Initializing custom map...");
+  // Fetch CSV data and get destination address.
+  fetchCSV().then(csvText => {
+    const parsedRows = parseCSV(csvText);
+    const todayRow = findTodayRow(parsedRows);
+    if (!todayRow) {
+      console.warn("No row found for today's date!");
+      return;
+    }
+    const destAddress = todayRow["Address"] + ", " + todayRow["City"] + ", " + todayRow["State"] + " " + todayRow["Zipcode"];
+    Promise.all([ geocodeClientSide(ORIGIN_ADDRESS), geocodeClientSide(destAddress) ])
+      .then(function(coordsArray) {
+        const originCoords = coordsArray[0];
+        const destCoords = coordsArray[1];
+        if (!originCoords || !destCoords) {
+          console.error("Address geocoding failed.");
+          return;
+        }
+        // Calculate center as average between origin and destination.
+        const centerLat = (originCoords.lat() + destCoords.lat()) / 2;
+        const centerLng = (originCoords.lng() + destCoords.lng()) / 2;
+        const mapOptions = {
+          center: { lat: centerLat, lng: centerLng },
+          zoom: 14,
+          disableDefaultUI: true,
+          styles: [ /* Insert your custom style array here, if any */ ]
+        };
+        const mapContainer = document.getElementById("customMap");
+        if (mapContainer) {
+          const map = new google.maps.Map(mapContainer, mapOptions);
+          // Use DirectionsService to compute the route.
+          const directionsService = new google.maps.DirectionsService();
+          const directionsRenderer = new google.maps.DirectionsRenderer({
+            map: map,
+            suppressMarkers: false
+          });
+          const request = {
+            origin: ORIGIN_ADDRESS,
+            destination: destAddress,
+            travelMode: google.maps.TravelMode.DRIVING
+          };
+          directionsService.route(request, function(result, status) {
+            if (status === google.maps.DirectionsStatus.OK) {
+              directionsRenderer.setDirections(result);
+              // Extract travel time from the result and update the ETA element.
+              const travelTime = result.routes[0].legs[0].duration.text;
+              const etaEl = document.getElementById("eta");
+              if (etaEl) {
+                etaEl.innerHTML = '<div class="eta-container">' +
+                  '<img src="icons/travelTimeicon.png" class="eta-icon" alt="ETA Icon">' +
+                  '<span class="eta-text">' + travelTime + '</span>' +
+                  '</div>';
+              }
+              localStorage.setItem("eventETA", travelTime);
+            } else {
+              console.error("Directions request failed due to " + status);
+              const etaEl = document.getElementById("eta");
+              if (etaEl) {
+                etaEl.textContent = "No route found";
+              }
+            }
+          });
+        } else {
+          console.error("Custom map container not found!");
+        }
+      });
+  });
 }
 
-/**
- * Render static data for the Banner widget.
- */
+/*********************
+ * Banner-Specific Functions
+ *********************/
 function renderData(eventData) {
   const eventNameEl = document.getElementById("eventNameValue");
   const guestCountEl = document.getElementById("guestCountValue");
@@ -226,9 +268,6 @@ function renderData(eventData) {
   }
 }
 
-/**
- * Calculate the departure time for the Banner widget.
- */
 function determineEventStartTime(row) {
   let startTimeStr = row["Event Start Time"]?.trim();
   if (startTimeStr) {
@@ -299,48 +338,6 @@ function updateDepartureTimeDisplay(eventData) {
 }
 
 /*********************
- * Custom Map Initialization (Step 3)
- *********************/
-function initCustomMap() {
-  console.log("Initializing custom map...");
-  // For custom maps, assume your HTML has a <div id="customMap"> instead of an iframe.
-  // Use CSV data to determine the destination address.
-  fetchCSV().then(csvText => {
-    const parsedRows = parseCSV(csvText);
-    const todayRow = findTodayRow(parsedRows);
-    if (!todayRow) {
-      console.warn("No row found for today's date!");
-      return;
-    }
-    const destAddress = todayRow["Address"] + ", " + todayRow["City"] + ", " + todayRow["State"] + " " + todayRow["Zipcode"];
-    Promise.all([ geocodeClientSide(ORIGIN_ADDRESS), geocodeClientSide(destAddress) ])
-      .then(function(coordsArray) {
-        const originCoords = coordsArray[0];
-        const destCoords = coordsArray[1];
-        if (!originCoords || !destCoords) {
-          console.error("Address geocoding failed.");
-          return;
-        }
-        // Calculate the center as the average of origin and destination
-        const centerLat = (originCoords.lat() + destCoords.lat()) / 2;
-        const centerLng = (originCoords.lng() + destCoords.lng()) / 2;
-        const mapOptions = {
-          center: { lat: centerLat, lng: centerLng },
-          zoom: 14,
-          disableDefaultUI: true,
-          styles: [ /* Insert your custom style array here, if any */ ]
-        };
-        const mapContainer = document.getElementById("customMap");
-        if (mapContainer) {
-          new google.maps.Map(mapContainer, mapOptions);
-        } else {
-          console.error("Custom map container not found!");
-        }
-      });
-  });
-}
-
-/*********************
  * MAIN INIT
  *********************/
 async function init() {
@@ -352,13 +349,12 @@ async function init() {
     console.warn("No row found for today's date!");
     return;
   }
-  // Banner-specific updates (if the elements exist)
+  // Banner-specific updates (if elements exist)
   if (document.getElementById("eventNameValue")) renderData(todayRow);
   if (document.getElementById("departureTimeValue")) updateDepartureTimeDisplay(todayRow);
   // Common ETA update (for both Banner and Map widgets)
   updateEtaAndMap(todayRow);
-  
-  // Start periodic refresh
+
   setInterval(async () => {
     console.log("Refreshing data...");
     const newCSV = await fetchCSV();
@@ -374,7 +370,6 @@ async function init() {
   }, 30000);
 }
 
-// (Step 4) Hook the custom map initializer into the Google Maps API callback.
+// Hook the custom map initializer into the Google Maps API callback.
 window.initMap = initCustomMap;
-// Expose geocodeClientSide globally if needed.
 window.geocodeClientSide = geocodeClientSide;
