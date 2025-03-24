@@ -30,7 +30,7 @@ body {
 
 /* Left container: fixed width 760px with specified left/right padding, left-aligned */
 .left-container {
-  width: 760px;
+  width: 820px;
   padding-left: 48px;
   padding-right: 38px;
   text-align: left;
@@ -58,8 +58,8 @@ body {
 
 /* Icon styling for right fields */
 .icon {
-  width: 50px !important;
-  height: Auto !important;
+  width: 50px;
+  height: Auto;
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
