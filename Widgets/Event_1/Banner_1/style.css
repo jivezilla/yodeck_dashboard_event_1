@@ -57,8 +57,7 @@ body {
 
 /* Icon styling for right fields */
 .icon {
-  width: 50px;
-  height: auto;
+  width: 60px;
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
