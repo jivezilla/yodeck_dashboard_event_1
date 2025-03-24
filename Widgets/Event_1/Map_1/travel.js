@@ -170,7 +170,7 @@ function getTravelTime(originCoords, destCoords) {
 }
 
 /**
- * Update the ETA and Map.
+ * Update the ETA and Map (for both Banner and Map widgets).
  */
 function updateEtaAndMap(eventData) {
   const etaEl = document.getElementById("eta");
@@ -188,7 +188,7 @@ function updateEtaAndMap(eventData) {
       }
       getTravelTime(originCoords, destCoords)
         .then(function(travelTime) {
-          // Ensure the icon filename matches exactly; adjust if necessary.
+          // Do not include any prefix; simply display travel time with icon.
           etaEl.innerHTML = '<div class="eta-container">' +
                             '<img src="icons/travelTimeicon.png" class="eta-icon" alt="ETA Icon">' +
                             '<span class="eta-text">' + travelTime + '</span>' +
@@ -207,7 +207,7 @@ function updateEtaAndMap(eventData) {
 }
 
 /**
- * Render static data for Banner widget.
+ * Render static data for the Banner widget.
  */
 function renderData(eventData) {
   const eventNameEl = document.getElementById("eventNameValue");
@@ -232,7 +232,7 @@ function renderData(eventData) {
 }
 
 /**
- * Calculate the departure time for Banner widget.
+ * Calculate the departure time for the Banner widget.
  */
 function determineEventStartTime(row) {
   let startTimeStr = row["Event Start Time"]?.trim();
@@ -318,7 +318,7 @@ async function init() {
   // Banner-specific updates (if elements exist)
   if (document.getElementById("eventNameValue")) renderData(todayRow);
   if (document.getElementById("departureTimeValue")) updateDepartureTimeDisplay(todayRow);
-  // Common ETA & Map update
+  // Common ETA update (for both Banner and Map widgets)
   updateEtaAndMap(todayRow);
 
   setInterval(async () => {
