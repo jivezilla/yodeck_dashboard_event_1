@@ -4,13 +4,13 @@
   <meta charset="UTF-8">
   <title>Event Travel & ETA Dashboard - Map</title>
   <link rel="stylesheet" href="style.css">
-  <!-- Load travel.js first so that window.initMap is defined -->
+  <!-- Load travel.js first -->
   <script src="travel.js"></script>
-  <!-- Then load the Google Maps API with the callback -->
+  <!-- Load Google Maps JavaScript API with callback=initMap -->
   <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB4b4Ho4rNwF9hyPKCYFYXNU6dXI550M6U&callback=initMap"></script>
 </head>
 <body>
-  <h2 id="eta">Loading Travel Time...</h2>
-  <iframe id="mapFrame" src="" frameborder="0"></iframe>
+  <h2 id="eta">Loading Route Map & Travel Time...</h2>
+  <div id="customMap"></div>
 </body>
 </html>
