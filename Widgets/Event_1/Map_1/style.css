@@ -24,6 +24,11 @@ body {
   margin-bottom: 10px;
 }
 
+.eta-icon {
+  width: 50px !important;
+  height: auto !important;
+}
+
 /* Map iframe: force exact dimensions 480px x 480px, centered */
 #iframeContainer, 
 #iframe, 
