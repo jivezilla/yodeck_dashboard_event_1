@@ -120,8 +120,9 @@ function formatDuration(durationStr) {
 }
 
 /**
- * Get travel time from origin to destination using the new Routes API.
- * (This function is still available if needed elsewhere.)
+ * Get travel time from origin to destination using the Routes API.
+ * This sends an HTTP POST to computeRoutes with a field mask that returns duration,
+ * distanceMeters, and the encoded polyline.
  */
 function getTravelTime(originCoords, destCoords) {
   return new Promise(function(resolve, reject) {
@@ -144,7 +145,8 @@ function getTravelTime(originCoords, destCoords) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-Goog-FieldMask": "routes.duration"
+        // Request additional fields if needed.
+        "X-Goog-FieldMask": "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline"
       },
       body: JSON.stringify(requestBody)
     })
@@ -175,7 +177,7 @@ function getTravelTime(originCoords, destCoords) {
  *********************/
 function initCustomMap() {
   console.log("Initializing custom map...");
-  // Fetch CSV data and get destination address.
+  // Fetch CSV and extract destination address from today's row.
   fetchCSV().then(csvText => {
     const parsedRows = parseCSV(csvText);
     const todayRow = findTodayRow(parsedRows);
@@ -192,50 +194,18 @@ function initCustomMap() {
           console.error("Address geocoding failed.");
           return;
         }
-        // Calculate center as average between origin and destination.
+        // Compute center as average of origin and destination.
         const centerLat = (originCoords.lat() + destCoords.lat()) / 2;
         const centerLng = (originCoords.lng() + destCoords.lng()) / 2;
         const mapOptions = {
           center: { lat: centerLat, lng: centerLng },
           zoom: 14,
           disableDefaultUI: true,
-          styles: [ /* Insert your custom style array here, if any */ ]
+          styles: [ /* Insert custom style array here, if desired */ ]
         };
         const mapContainer = document.getElementById("customMap");
         if (mapContainer) {
-          const map = new google.maps.Map(mapContainer, mapOptions);
-          // Use DirectionsService to compute the route.
-          const directionsService = new google.maps.DirectionsService();
-          const directionsRenderer = new google.maps.DirectionsRenderer({
-            map: map,
-            suppressMarkers: false
-          });
-          const request = {
-            origin: ORIGIN_ADDRESS,
-            destination: destAddress,
-            travelMode: google.maps.TravelMode.DRIVING
-          };
-          directionsService.route(request, function(result, status) {
-            if (status === google.maps.DirectionsStatus.OK) {
-              directionsRenderer.setDirections(result);
-              // Extract travel time from the result and update the ETA element.
-              const travelTime = result.routes[0].legs[0].duration.text;
-              const etaEl = document.getElementById("eta");
-              if (etaEl) {
-                etaEl.innerHTML = '<div class="eta-container">' +
-                  '<img src="icons/travelTimeicon.png" class="eta-icon" alt="ETA Icon">' +
-                  '<span class="eta-text">' + travelTime + '</span>' +
-                  '</div>';
-              }
-              localStorage.setItem("eventETA", travelTime);
-            } else {
-              console.error("Directions request failed due to " + status);
-              const etaEl = document.getElementById("eta");
-              if (etaEl) {
-                etaEl.textContent = "No route found";
-              }
-            }
-          });
+          new google.maps.Map(mapContainer, mapOptions);
         } else {
           console.error("Custom map container not found!");
         }
