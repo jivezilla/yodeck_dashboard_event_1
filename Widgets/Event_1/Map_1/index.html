@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <title>Event Travel & ETA Dashboard - Map</title>
   <link rel="stylesheet" href="style.css">
-  <!-- Load travel.js first -->
+  <!-- Load travel.js first so that window.initMap is defined -->
   <script src="travel.js"></script>
-  <!-- Load Google Maps JavaScript API with callback=initMap -->
+  <!-- Then load the Google Maps API with the callback -->
   <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB4b4Ho4rNwF9hyPKCYFYXNU6dXI550M6U&callback=initMap"></script>
 </head>
 <body>
