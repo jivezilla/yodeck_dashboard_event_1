@@ -1,4 +1,4 @@
-/* style.css */
+/* style.css for Banner_1 */
 
 /* Reset */
 * {
@@ -28,20 +28,19 @@ body {
   align-items: center;
 }
 
-/* Left container: fixed width 760px with specified left/right padding, left-aligned */
+/* Left container: fixed width with specified left/right padding, left-aligned */
 .left-container {
-  width: 820px;
+  width: 800px;
   padding-left: 48px;
   padding-right: 38px;
   text-align: left;
   font-weight: bold;
-  /* Using clamp to set font-size between 30px and 50px, max 50px */
   font-size: clamp(10px, 3vw, 50px) !important;
   white-space: nowrap;
   overflow: hidden;
 }
 
-/* Right containers group: auto width for content, 38px gap, right padding 192px */
+/* Right containers group: auto width, 38px gap, 192px right padding */
 .right-containers {
   display: flex;
   align-items: center;
@@ -59,7 +58,7 @@ body {
 /* Icon styling for right fields */
 .icon {
   width: 50px;
-  height: Auto;
+  height: auto;
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
