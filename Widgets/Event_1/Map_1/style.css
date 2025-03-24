@@ -19,6 +19,15 @@ body {
   position: relative;
 }
 
+.eta-icon {
+  width: 65px !important;
+  height: auto !important;
+  max-height: 33px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
 /* Optional: style for the ETA text */
 #eta {
   margin-bottom: 10px;
