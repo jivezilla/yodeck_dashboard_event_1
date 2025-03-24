@@ -52,9 +52,7 @@ function parseCSV(csvText) {
       cell += char;
     }
   }
-  if (row.length > 0) {
-    rows.push(row);
-  }
+  if (row.length > 0) rows.push(row);
   const headers = rows[0];
   return rows.slice(1).map(row => {
     let obj = {};
@@ -88,7 +86,7 @@ function findTodayRow(rows) {
 }
 
 /**
- * Geocode an address using the Maps JavaScript API (client-side).
+ * Geocode an address using the Maps JavaScript API.
  */
 function geocodeClientSide(address) {
   return new Promise(function(resolve, reject) {
@@ -110,9 +108,7 @@ function geocodeClientSide(address) {
  */
 function formatDuration(durationStr) {
   const seconds = parseInt(durationStr.replace(/s/i, ""), 10);
-  if (isNaN(seconds)) {
-    return durationStr;
-  }
+  if (isNaN(seconds)) return durationStr;
   if (seconds < 3600) {
     const minutes = Math.round(seconds / 60);
     return minutes + " min";
@@ -124,7 +120,7 @@ function formatDuration(durationStr) {
 }
 
 /**
- * Use the new Routes API to get travel time.
+ * Get travel time from origin to destination using the new Routes API.
  */
 function getTravelTime(originCoords, destCoords) {
   return new Promise(function(resolve, reject) {
@@ -143,7 +139,6 @@ function getTravelTime(originCoords, destCoords) {
       languageCode: "en-US",
       units: "IMPERIAL"
     };
-
     fetch(url, {
       method: "POST",
       headers: {
@@ -176,7 +171,6 @@ function getTravelTime(originCoords, destCoords) {
 
 /**
  * Update the ETA and Map.
- * This function is common to both Banner and Map widgets.
  */
 function updateEtaAndMap(eventData) {
   const etaEl = document.getElementById("eta");
@@ -194,7 +188,7 @@ function updateEtaAndMap(eventData) {
       }
       getTravelTime(originCoords, destCoords)
         .then(function(travelTime) {
-          // Ensure the travel time icon filename matches exactly.
+          // Ensure the icon filename matches exactly; adjust if necessary.
           etaEl.innerHTML = '<div class="eta-container">' +
                             '<img src="icons/travelTimeicon.png" class="eta-icon" alt="ETA Icon">' +
                             '<span class="eta-text">' + travelTime + '</span>' +
@@ -213,7 +207,7 @@ function updateEtaAndMap(eventData) {
 }
 
 /**
- * For Banner-specific updates: render static data and update departure time.
+ * Render static data for Banner widget.
  */
 function renderData(eventData) {
   const eventNameEl = document.getElementById("eventNameValue");
@@ -238,31 +232,7 @@ function renderData(eventData) {
 }
 
 /**
- * For Banner-specific updates: calculate and update departure time.
- * Only runs if the corresponding DOM element exists.
- */
-function updateDepartureTimeDisplay(eventData) {
-  const departureTimeEl = document.getElementById("departureTimeValue");
-  if (!departureTimeEl) return; // Skip if not in DOM (i.e. in Map widget)
-  const eventStartTime = determineEventStartTime(eventData);
-  if (!eventStartTime) {
-    console.error("No valid event start time found.");
-    return;
-  }
-  const travelTime = localStorage.getItem("eventETA");
-  if (!travelTime) {
-    console.error("No travel time available.");
-    return;
-  }
-  const guestCount = parseInt(eventData["Guest Count"], 10) || 0;
-  const departureTime = calculateDepartureTime(eventStartTime, travelTime, guestCount, 5);
-  const formattedDepartureTime = departureTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-  departureTimeEl.textContent = formattedDepartureTime;
-}
-
-/**
- * Determine the event start time from candidate columns.
- * If the "Event Start Time" is time-only (e.g., "9:30:00 PM"), prepend today's date.
+ * Calculate the departure time for Banner widget.
  */
 function determineEventStartTime(row) {
   let startTimeStr = row["Event Start Time"]?.trim();
@@ -293,9 +263,6 @@ function determineEventStartTime(row) {
   return candidates[0].time;
 }
 
-/**
- * Parse a formatted travel time string (e.g., "1 hr 5 min" or "3 min") into total minutes.
- */
 function parseTravelTime(travelTimeStr) {
   let totalMinutes = 0;
   const hrMatch = travelTimeStr.match(/(\d+)\s*hr/);
@@ -305,10 +272,6 @@ function parseTravelTime(travelTimeStr) {
   return totalMinutes;
 }
 
-/**
- * Calculate Departure Time = Event Start Time - (120 + Travel Time + 5 + Extra Guest Buffer)
- * Extra Guest Buffer: 15 min per 50 guests above 100.
- */
 function calculateDepartureTime(eventStartTime, travelTimeStr, guestCount, baseBuffer) {
   baseBuffer = baseBuffer || 5;
   const travelMinutes = parseTravelTime(travelTimeStr);
@@ -319,6 +282,25 @@ function calculateDepartureTime(eventStartTime, travelTimeStr, guestCount, baseB
   }
   const totalSubtract = baseline + travelMinutes + baseBuffer + extraGuestBuffer;
   return new Date(eventStartTime.getTime() - totalSubtract * 60000);
+}
+
+function updateDepartureTimeDisplay(eventData) {
+  const departureTimeEl = document.getElementById("departureTimeValue");
+  if (!departureTimeEl) return;
+  const eventStartTime = determineEventStartTime(eventData);
+  if (!eventStartTime) {
+    console.error("No valid event start time found.");
+    return;
+  }
+  const travelTime = localStorage.getItem("eventETA");
+  if (!travelTime) {
+    console.error("No travel time available.");
+    return;
+  }
+  const guestCount = parseInt(eventData["Guest Count"], 10) || 0;
+  const departureTime = calculateDepartureTime(eventStartTime, travelTime, guestCount, 5);
+  const formattedDepartureTime = departureTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  departureTimeEl.textContent = formattedDepartureTime;
 }
 
 /*********************
@@ -333,10 +315,10 @@ async function init() {
     console.warn("No row found for today's date!");
     return;
   }
-  // For Banner widget, render static data and departure time.
+  // Banner-specific updates (if elements exist)
   if (document.getElementById("eventNameValue")) renderData(todayRow);
   if (document.getElementById("departureTimeValue")) updateDepartureTimeDisplay(todayRow);
-  // For both Banner and Map widgets, update ETA and Map.
+  // Common ETA & Map update
   updateEtaAndMap(todayRow);
 
   setInterval(async () => {
@@ -354,5 +336,6 @@ async function init() {
   }, 30000);
 }
 
-// Attach initMap to window so Google Maps API callback can call it.
+// Ensure global functions are accessible for the Google Maps callback.
 window.initMap = init;
+window.geocodeClientSide = geocodeClientSide;
