@@ -66,14 +66,19 @@ body {
 }
 
 /* Specific icon images */
+/* 
+   Update the URL below depending on where your icons folder is relative to your CSS file.
+   For example, if your icons folder is in the repository root and Banner_1 is in a subfolder,
+   use "../icons/filename.png". Adjust if needed.
+*/
 .icon-guest {
-  background-image: url('./icons/guestCount.png');
+  background-image: url('../icons/guestCount.png');
 }
 .icon-departure {
-  background-image: url('./icons/departureTime.png');
+  background-image: url('../icons/departureTime.png');
 }
 .icon-end {
-  background-image: url('./icons/endTime.png');
+  background-image: url('../icons/endTime.png');
 }
 
 /* Field text styling */
