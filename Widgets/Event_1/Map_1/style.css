@@ -1,62 +1,36 @@
-/* style.css */
+/* style.css for Map_1 */
 
+/* Reset */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-html, body {
-  height: 100%;
-}
-
+/* Set fixed dimensions and padding for the entire page */
 body {
-  font-family:  "Instrument Serif", serif;
+  width: 500px;
+  height: 600px;
+  padding: 10px;
+  margin: auto;
   background-color: #c47725;
   color: #ffffff;
-  padding: 20px;
-  position: relative; /* needed for absolute positioning of the map */
-}
-
-/* ETA container styling */
-.eta-container {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-left: 20px;
-  padding-right: 20px;
-  background-color: #c47725;
-}
-
-/* Icon styling: 110x56 pixels */
-.eta-icon {
-  width: 110px;
-  height: 56px;
-}
-
-/* Travel time text styling */
-.eta-text {
-  font-size: 40px;
   font-family: "Instrument Serif", serif;
-  color: #ffffff;
-  text-align: right;
-  flex-grow: 1;
-  margin-left: 20px;
+  position: relative;
 }
 
-/* Extra spacing below the ETA container */
+/* Optional: style for the ETA text */
 #eta {
-  margin-bottom: 20px;
+  margin-bottom: 10px;
+  text-align: center;
+  font-size: 40px;
 }
 
-/* Position the embedded map (iframe) at the bottom with 14px padding.
-   It also has 20px left/right padding, so its width is reduced accordingly. */
-iframe {
-  position: absolute;
-  bottom: 14px;
-  left: 20px;
-  right: 20px;
-  width: calc(100% - 40px);
+/* Style the map embed (iframe) */
+iframe#mapFrame {
+  width: 480px;
+  height: 480px;
   border: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: block;
+  margin: 0 auto;
 }
