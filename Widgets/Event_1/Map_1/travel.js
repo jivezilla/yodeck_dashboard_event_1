@@ -120,7 +120,7 @@ function formatDuration(durationStr) {
 }
 
 /**
- * Get travel time from origin to destination using the new Routes API.
+ * Get travel time from origin to destination using the Routes API.
  */
 function getTravelTime(originCoords, destCoords) {
   return new Promise(function(resolve, reject) {
@@ -170,137 +170,98 @@ function getTravelTime(originCoords, destCoords) {
 }
 
 /**
- * Update the ETA and Map (for both Banner and Map widgets).
+ * Update the ETA element.
+ * (This function is common to both Banner and Map widgets.)
  */
-function updateEtaAndMap(eventData) {
+function updateEta() {
   const etaEl = document.getElementById("eta");
-  const mapEl = document.getElementById("mapFrame");
-  if (!etaEl || !mapEl) return;
-  const destAddress = eventData["Address"] + ", " + eventData["City"] + ", " + eventData["State"] + " " + eventData["Zipcode"];
-  Promise.all([ geocodeClientSide(ORIGIN_ADDRESS), geocodeClientSide(destAddress) ])
-    .then(function(coordsArray) {
-      const originCoords = coordsArray[0];
-      const destCoords = coordsArray[1];
-      if (!originCoords || !destCoords) {
-        etaEl.textContent = "Address not found";
-        mapEl.src = "";
-        return;
-      }
-      getTravelTime(originCoords, destCoords)
-        .then(function(travelTime) {
-          // Do not include any prefix; simply display travel time with icon.
-          etaEl.innerHTML = '<div class="eta-container">' +
-                            '<img src="icons/travelTimeicon.png" class="eta-icon" alt="ETA Icon">' +
-                            '<span class="eta-text">' + travelTime + '</span>' +
-                            '</div>';
-          localStorage.setItem("eventETA", travelTime);
-        })
-        .catch(function(error) {
-          etaEl.textContent = error;
-        });
-      const googleMapsEmbedURL = "https://www.google.com/maps/embed/v1/directions?key=" + GOOGLE_API_KEY +
-                                 "&origin=" + encodeURIComponent(ORIGIN_ADDRESS) +
-                                 "&destination=" + encodeURIComponent(destAddress) +
-                                 "&mode=driving";
-      mapEl.src = googleMapsEmbedURL;
-    });
-}
-
-/**
- * Render static data for the Banner widget.
- */
-function renderData(eventData) {
-  const eventNameEl = document.getElementById("eventNameValue");
-  const guestCountEl = document.getElementById("guestCountValue");
-  const endTimeEl = document.getElementById("endTimeValue");
-  
-  if (eventNameEl) {
-    const combinedName = (eventData["Event Name"] || "(No event name)") +
-                         " | " + (eventData["Venue Name"] || "(No venue)");
-    eventNameEl.textContent = combinedName;
-  }
-  if (guestCountEl) {
-    guestCountEl.textContent = eventData["Guest Count"] || "0";
-  }
-  if (endTimeEl) {
-    let endTime = eventData["Event Conclusion/Breakdown Time"] || "TBD";
-    if (endTime !== "TBD") {
-      endTime = endTime.replace(/:00(\s*[AP]M)/i, "$1");
+  if (!etaEl) return;
+  // (Assume that updateEtaAndMap from your working code only updates the travel time text.)
+  // Here we call getTravelTime using the existing CSV data.
+  // For simplicity, we'll use a hard-coded destination from CSV (if available) – adjust as needed.
+  fetchCSV().then(csvText => {
+    const parsedRows = parseCSV(csvText);
+    const todayRow = findTodayRow(parsedRows);
+    if (!todayRow) {
+      etaEl.textContent = "No event today";
+      return;
     }
-    endTimeEl.textContent = endTime;
-  }
+    const destAddress = todayRow["Address"] + ", " + todayRow["City"] + ", " + todayRow["State"] + " " + todayRow["Zipcode"];
+    Promise.all([ geocodeClientSide(ORIGIN_ADDRESS), geocodeClientSide(destAddress) ])
+      .then(function(coordsArray) {
+        const originCoords = coordsArray[0];
+        const destCoords = coordsArray[1];
+        if (!originCoords || !destCoords) {
+          etaEl.textContent = "Address not found";
+          return;
+        }
+        getTravelTime(originCoords, destCoords)
+          .then(function(travelTime) {
+            etaEl.innerHTML = '<div class="eta-container">' +
+                              '<img src="icons/travelTimeicon.png" class="eta-icon" alt="ETA Icon">' +
+                              '<span class="eta-text">' + travelTime + '</span>' +
+                              '</div>';
+            localStorage.setItem("eventETA", travelTime);
+          })
+          .catch(function(error) {
+            etaEl.textContent = error;
+          });
+      });
+  });
 }
 
-/**
- * Calculate the departure time for the Banner widget.
- */
-function determineEventStartTime(row) {
-  let startTimeStr = row["Event Start Time"]?.trim();
-  if (startTimeStr) {
-    if (!/[\d\/-]/.test(startTimeStr.split(" ")[0])) {
-      startTimeStr = getTodayInMDYYYY() + " " + startTimeStr;
+/*********************
+ * Custom Map Initialization
+ * (This is used to display the map without the directions card, zoom controls, and inset map button.)
+ *********************/
+function initCustomMap() {
+  console.log("Initializing custom map...");
+  // Fetch CSV data to determine the destination address.
+  fetchCSV().then(csvText => {
+    const parsedRows = parseCSV(csvText);
+    const todayRow = findTodayRow(parsedRows);
+    if (!todayRow) {
+      console.warn("No row found for today's date!");
+      return;
     }
-    const dt = new Date(startTimeStr);
-    if (!isNaN(dt.getTime())) return dt;
-  }
-  const candidates = [];
-  if (row["Meal Service Start Time"]?.trim()) {
-    candidates.push({ time: new Date(getTodayInMDYYYY() + " " + row["Meal Service Start Time"].trim()), source: "Meal Service Start Time" });
-  }
-  if (row["Cocktail Hour Start Time"]?.trim()) {
-    candidates.push({ time: new Date(getTodayInMDYYYY() + " " + row["Cocktail Hour Start Time"].trim()), source: "Cocktail Hour Start Time" });
-  }
-  if (row["Passed Hors D'oeuvres Time Start"]?.trim()) {
-    candidates.push({ time: new Date(getTodayInMDYYYY() + " " + row["Passed Hors D'oeuvres Time Start"].trim()), source: "Passed Hors D'oeuvres Time Start" });
-  }
-  if (candidates.length === 0) return null;
-  candidates.sort((a, b) => a.time - b.time);
-  if (candidates[0].source === "Cocktail Hour Start Time" &&
-      row["Passed Hors D'oeuvres"] &&
-      row["Passed Hors D'oeuvres"].toLowerCase() === "yes") {
-    return candidates[0].time;
-  }
-  return candidates[0].time;
-}
-
-function parseTravelTime(travelTimeStr) {
-  let totalMinutes = 0;
-  const hrMatch = travelTimeStr.match(/(\d+)\s*hr/);
-  if (hrMatch) totalMinutes += parseInt(hrMatch[1], 10) * 60;
-  const minMatch = travelTimeStr.match(/(\d+)\s*min/);
-  if (minMatch) totalMinutes += parseInt(minMatch[1], 10);
-  return totalMinutes;
-}
-
-function calculateDepartureTime(eventStartTime, travelTimeStr, guestCount, baseBuffer) {
-  baseBuffer = baseBuffer || 5;
-  const travelMinutes = parseTravelTime(travelTimeStr);
-  const baseline = 120;
-  let extraGuestBuffer = 0;
-  if (guestCount > 100) {
-    extraGuestBuffer = 15 * Math.ceil((guestCount - 100) / 50);
-  }
-  const totalSubtract = baseline + travelMinutes + baseBuffer + extraGuestBuffer;
-  return new Date(eventStartTime.getTime() - totalSubtract * 60000);
-}
-
-function updateDepartureTimeDisplay(eventData) {
-  const departureTimeEl = document.getElementById("departureTimeValue");
-  if (!departureTimeEl) return;
-  const eventStartTime = determineEventStartTime(eventData);
-  if (!eventStartTime) {
-    console.error("No valid event start time found.");
-    return;
-  }
-  const travelTime = localStorage.getItem("eventETA");
-  if (!travelTime) {
-    console.error("No travel time available.");
-    return;
-  }
-  const guestCount = parseInt(eventData["Guest Count"], 10) || 0;
-  const departureTime = calculateDepartureTime(eventStartTime, travelTime, guestCount, 5);
-  const formattedDepartureTime = departureTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-  departureTimeEl.textContent = formattedDepartureTime;
+    const destAddress = todayRow["Address"] + ", " + todayRow["City"] + ", " + todayRow["State"] + " " + todayRow["Zipcode"];
+    Promise.all([ geocodeClientSide(ORIGIN_ADDRESS), geocodeClientSide(destAddress) ])
+      .then(function(coordsArray) {
+        const originCoords = coordsArray[0];
+        const destCoords = coordsArray[1];
+        if (!originCoords || !destCoords) {
+          console.error("Address geocoding failed.");
+          return;
+        }
+        // Compute center as average of origin and destination.
+        const centerLat = (originCoords.lat() + destCoords.lat()) / 2;
+        const centerLng = (originCoords.lng() + destCoords.lng()) / 2;
+        // Create custom map with UI controls disabled.
+        const mapOptions = {
+          center: { lat: centerLat, lng: centerLng },
+          zoom: 14,
+          disableDefaultUI: true,
+          zoomControl: false,
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: false,
+          styles: [ 
+            /* Insert your custom style array here to further hide features if needed.
+               For example, to hide POIs:
+               { featureType: "poi", elementType: "labels", stylers: [ { visibility: "off" } ] }
+            */
+          ]
+        };
+        const mapContainer = document.getElementById("customMap");
+        if (mapContainer) {
+          const map = new google.maps.Map(mapContainer, mapOptions);
+          // (Optionally, if you want to display the route polyline using the Routes API,
+          // you would call that API and decode/display the polyline on this map.)
+        } else {
+          console.error("Custom map container not found!");
+        }
+      });
+  });
 }
 
 /*********************
@@ -308,34 +269,19 @@ function updateDepartureTimeDisplay(eventData) {
  *********************/
 async function init() {
   console.log("Initializing event dashboard...");
-  const csvText = await fetchCSV();
-  const parsedRows = parseCSV(csvText);
-  const todayRow = findTodayRow(parsedRows);
-  if (!todayRow) {
-    console.warn("No row found for today's date!");
-    return;
-  }
-  // Banner-specific updates (if elements exist)
-  if (document.getElementById("eventNameValue")) renderData(todayRow);
-  if (document.getElementById("departureTimeValue")) updateDepartureTimeDisplay(todayRow);
-  // Common ETA update (for both Banner and Map widgets)
-  updateEtaAndMap(todayRow);
-
-  setInterval(async () => {
-    console.log("Refreshing data...");
-    const newCSV = await fetchCSV();
-    const newRows = parseCSV(newCSV);
-    const newTodayRow = findTodayRow(newRows);
-    if (!newTodayRow) {
-      console.warn("No row found for today's date on refresh!");
-      return;
-    }
-    if (document.getElementById("eventNameValue")) renderData(newTodayRow);
-    if (document.getElementById("departureTimeValue")) updateDepartureTimeDisplay(newTodayRow);
-    updateEtaAndMap(newTodayRow);
+  // Update ETA (travel time) display.
+  updateEta();
+  
+  // For Map_1, initialize the custom map.
+  initCustomMap();
+  
+  // Optional: set up periodic refresh for ETA updates.
+  setInterval(() => {
+    console.log("Refreshing ETA...");
+    updateEta();
   }, 30000);
 }
 
-// Ensure global functions are accessible for the Google Maps callback.
+// Hook the custom map initializer into the Google Maps API callback.
 window.initMap = init;
 window.geocodeClientSide = geocodeClientSide;
