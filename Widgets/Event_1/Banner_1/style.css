@@ -1,4 +1,4 @@
-/* style.css for Banner_1 */
+/* style.css for Map_1 */
 
 /* Reset */
 * {
@@ -7,77 +7,30 @@
   box-sizing: border-box;
 }
 
-/* Page background & full viewport height */
+/* Set fixed dimensions and padding for the entire page */
 body {
-  background: #C77B29;
-  color: #fff;
+  width: 500px;
+  height: 600px;
+  padding: 10px;
+  margin: auto;
+  background-color: #c47725;
+  color: #ffffff;
   font-family: "Instrument Serif", serif;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  margin: 0;
+  position: relative;
 }
 
-/* Dashboard container: fixed at 1776px wide, 90px high */
-.dashboard-container {
-  width: 1776px;
-  height: 90px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+/* Optional: style for the ETA text */
+#eta {
+  margin-bottom: 10px;
+  text-align: center;
+  font-size: 40px;
 }
 
-/* Left container: combined event name + venue */
-.left-container {
-  width: 800px;
-  padding-left: 48px;
-  padding-right: 38px;
-  text-align: left;
-  font-weight: bold;
-  font-size: clamp(10px, 3vw, 50px) !important; 
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-/* Right containers group: flex, 38px gap, 192px right padding */
-.right-containers {
-  display: flex;
-  align-items: center;
-  gap: 38px;
-  padding-right: 192px;
-}
-
-/* Each field container (Guest Count, Departure Time, End Time) */
-.field {
-  display: flex;
-  align-items: center;
-  white-space: nowrap;
-}
-
-/* Icon styling for right fields: 50px wide, maintain aspect ratio */
-.icon {
-  width: 50px;
-  height: auto;
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  margin-right: 10px; /* gap between icon and text */
-}
-
-/* Specific icon images (assuming icons are in Banner_1/icons/) */
-.icon-guest {
-  background-image: url("icons/guestCount.png");
-}
-.icon-departure {
-  background-image: url("icons/departureTime.png");
-}
-.icon-end {
-  background-image: url("icons/endTime.png");
-}
-
-/* Right field text styling */
-.field span {
-  font-size: 50px;
-  text-align: right;
+/* Force the map embed (iframe) to be 480px by 480px */
+iframe#mapFrame {
+  width: 480px !important;
+  height: 480px !important;
+  border: none;
+  display: block;
+  margin: 0 auto;
 }
