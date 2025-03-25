@@ -1,16 +1,19 @@
-  body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      background: transparent; /* transparent background */
-    }
-    body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      color: #d55c78;                 /* text color */
-      font-family: 'Newsreader', serif; /* must match the Google Fonts link above */
-      font-size: 60px;               /* text size */
-      font-weight: bold;             /* bold weight */
-      text-align: center;            /* center alignment */
-    }
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:wght@700&display=swap');
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: transparent; /* transparent background */
+}
+
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #d55c78;                 /* text color */
+  font-family: 'Newsreader', serif; /* from Google Fonts import above */
+  font-size: 60px;               /* text size */
+  font-weight: bold;             /* bold weight */
+  text-align: center;            /* center alignment */
+}
