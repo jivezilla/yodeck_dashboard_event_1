@@ -1,59 +1,22 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8" />
-  <title>SHC Event Dashboard</title>
+  <title>Event Travel & ETA Dashboard</title>
   
-  <!-- Google Font (Instrument Serif) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Instrument+Serif:wght@400;700&display=swap"
-    rel="stylesheet"
-  />
-
-  <!-- External CSS -->
+  <!-- Load travel.js first so that window.initMap and window.geocodeClientSide are defined -->
+  <script src="travel.js"></script>
+  
+  <!-- Then load the Google Maps API with the callback -->
+  <script
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB4b4Ho4rNwF9hyPKCYFYXNU6dXI550M6U&callback=initMap"
+    async defer>
+  </script>
+  
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- Optional ETA heading if you want to see the travel time. 
-       If you don't want an ETA display, remove this. -->
-  <h2 id="eta" style="position:absolute; top:10px; left:10px;"></h2>
-  
-  <div class="dashboard-container">
-    <!-- Left container: Combined Event Name and Venue -->
-    <div class="left-container">
-      <span id="eventNameValue">Loading...</span>
-    </div>
-    
-    <!-- Right containers group -->
-    <div class="right-containers">
-      <!-- Guest Count -->
-      <div class="field">
-        <div class="icon icon-guest"></div>
-        <span id="guestCountValue">Loading...</span>
-      </div>
-      <!-- Departure Time -->
-      <div class="field">
-        <div class="icon icon-departure"></div>
-        <span id="departureTimeValue">Loading...</span>
-      </div>
-      <!-- End Time -->
-      <div class="field">
-        <div class="icon icon-end"></div>
-        <span id="endTimeValue">Loading...</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Error Logging -->
-  <script>
-    window.addEventListener("error", function (event) {
-      console.error("JavaScript Error:", event.message);
-    });
-  </script>
-
-  <!-- Banner Script -->
-  <script src="script.js"></script>
+  <h2 id="eta">Loading ETA...</h2>
+  <iframe id="mapFrame" src="" width="100%" height="600px" frameborder="0"></iframe>
 </body>
 </html>
