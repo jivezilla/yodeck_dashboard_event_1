@@ -1,14 +1,11 @@
 console.log("Script is running!");
 
-// script.js for SHC Event Dashboard
-// Finds the LAST row matching today's date in the "Date" column.
-
+// Constants
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSOJpWzhoSZ2zgH1l9DcW3gc4RsbTsRqsSCTpGuHcOAfESVohlucF8QaJ6u58wQE0UilF7ChQXhbckE/pub?output=csv";
 
 /*****************************************************
  * FETCH & PARSE CSV
  *****************************************************/
-
 async function fetchCSV() {
   console.log("Fetching CSV data...");
   try {
@@ -27,7 +24,6 @@ function parseCSV(csvText) {
   let insideQuotes = false;
   let row = [];
   let cell = '';
-
   for (let i = 0; i < csvText.length; i++) {
     const char = csvText[i];
     if (char === '"' && csvText[i + 1] === '"') { 
@@ -47,11 +43,7 @@ function parseCSV(csvText) {
       cell += char;
     }
   }
-  
-  if (row.length > 0) {
-    rows.push(row);
-  }
-  
+  if (row.length > 0) rows.push(row);
   const headers = rows[0];
   return rows.slice(1).map(row => {
     let obj = {};
@@ -65,7 +57,6 @@ function parseCSV(csvText) {
 /*****************************************************
  * HELPER: Today in M/D/YYYY
  *****************************************************/
-
 function getTodayInMDYYYY() {
   const today = new Date();
   const M = today.getMonth() + 1;
@@ -77,7 +68,6 @@ function getTodayInMDYYYY() {
 /*****************************************************
  * FIND LAST ROW FOR TODAY
  *****************************************************/
-
 function findTodayRow(rows) {
   const todayStr = getTodayInMDYYYY();
   console.log("Today's date for filtering:", todayStr);
@@ -89,15 +79,12 @@ function findTodayRow(rows) {
 /*****************************************************
  * RENDER STATIC DATA
  *****************************************************/
-
 function renderData(eventData) {
-  // Combine Event Name and Venue Name as "[Event Name] | [Venue Name]"
   const combinedName = (eventData["Event Name"] || "(No event name)") +
                        " | " + (eventData["Venue Name"] || "(No venue)");
   const guestCount = eventData["Guest Count"] || "0";
   let endTime = eventData["Event Conclusion/Breakdown Time"] || "TBD";
   if (endTime !== "TBD") {
-    // Remove seconds from end time (e.g., "9:30:00 PM" -> "9:30 PM")
     endTime = endTime.replace(/:00(\s*[AP]M)/i, "$1");
   }
   document.getElementById("eventNameValue").textContent = combinedName;
@@ -108,11 +95,6 @@ function renderData(eventData) {
 /*****************************************************
  * DEPARTURE TIME CALCULATION FUNCTIONS
  *****************************************************/
-
-/**
- * Determine event start time. If the "Event Start Time" is time-only (e.g., "9:30:00 PM"),
- * prepend today's date to create a valid Date.
- */
 function determineEventStartTime(row) {
   let startTimeStr = row["Event Start Time"]?.trim();
   if (startTimeStr) {
@@ -146,9 +128,6 @@ function determineEventStartTime(row) {
   return candidates[0].time;
 }
 
-/**
- * Parse a formatted travel time string (e.g., "1 hr 5 min" or "3 min") into total minutes.
- */
 function parseTravelTime(travelTimeStr) {
   let totalMinutes = 0;
   const hrMatch = travelTimeStr.match(/(\d+)\s*hr/);
@@ -162,11 +141,6 @@ function parseTravelTime(travelTimeStr) {
   return totalMinutes;
 }
 
-/**
- * Calculate Departure Time using:
- * Departure Time = Event Start Time - (2hr baseline (120 min) + Travel Time + Base Buffer (5 min) + Extra Guest Buffer)
- * Extra Guest Buffer: 15 minutes per 50 guests above 100.
- */
 function calculateDepartureTime(eventStartTime, travelTimeStr, guestCount, baseBuffer) {
   baseBuffer = baseBuffer || 5;
   const travelMinutes = parseTravelTime(travelTimeStr);
@@ -179,10 +153,6 @@ function calculateDepartureTime(eventStartTime, travelTimeStr, guestCount, baseB
   return new Date(eventStartTime.getTime() - totalSubtract * 60000);
 }
 
-/**
- * Update the Departure Time display.
- * Displays just the time (e.g., "2:24 PM") with no prefix.
- */
 function updateDepartureTimeDisplay(eventData) {
   const eventStartTime = determineEventStartTime(eventData);
   if (!eventStartTime) {
@@ -203,23 +173,18 @@ function updateDepartureTimeDisplay(eventData) {
 /*****************************************************
  * MAIN INIT
  *****************************************************/
-
 async function init() {
   console.log("Initializing event dashboard...");
-
   const csvText = await fetchCSV();
   const parsedRows = parseCSV(csvText);
-
   const todayRow = findTodayRow(parsedRows);
-
   if (!todayRow) {
     console.warn("No row found for today's date!");
     return;
   }
-
   renderData(todayRow);
   updateDepartureTimeDisplay(todayRow);
-
+  
   setInterval(async () => {
     console.log("Refreshing data...");
     const newCSV = await fetchCSV();
@@ -232,6 +197,51 @@ async function init() {
     renderData(newTodayRow);
     updateDepartureTimeDisplay(newTodayRow);
   }, 30000);
+  
+  // Also update the travel time (ETA) display.
+  updateEta();
+}
+
+/**
+ * Update the ETA element using the Routes API.
+ */
+function updateEta() {
+  const etaEl = document.getElementById("eta");
+  if (!etaEl) return;
+  fetchCSV().then(csvText => {
+    const parsedRows = parseCSV(csvText);
+    const todayRow = findTodayRow(parsedRows);
+    if (!todayRow) {
+      etaEl.textContent = "No event today";
+      return;
+    }
+    const destAddress = todayRow["Address"] + ", " + todayRow["City"] + ", " + todayRow["State"] + " " + todayRow["Zipcode"];
+    Promise.all([ geocodeClientSide(ORIGIN_ADDRESS), geocodeClientSide(destAddress) ])
+      .then(function(coordsArray) {
+        const originCoords = coordsArray[0];
+        const destCoords = coordsArray[1];
+        if (!originCoords || !destCoords) {
+          etaEl.textContent = "Address not found";
+          return;
+        }
+        getTravelTime(originCoords, destCoords)
+          .then(function(travelTime) {
+            // Use the correct path for the travel time icon (in the same folder as index.html)
+            etaEl.innerHTML = '<div class="eta-container">' +
+                              '<img src="icons/travelTimeicon.png" class="eta-icon" alt="ETA Icon">' +
+                              '<span class="eta-text">' + travelTime + '</span>' +
+                              '</div>';
+            localStorage.setItem("eventETA", travelTime);
+          })
+          .catch(function(error) {
+            etaEl.textContent = error;
+          });
+      });
+  });
 }
 
 init();
+
+// Expose necessary functions globally.
+window.initMap = init;
+window.geocodeClientSide = geocodeClientSide;
