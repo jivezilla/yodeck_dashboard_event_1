@@ -28,7 +28,7 @@ body {
   align-items: center;
 }
 
-/* Left container: fixed width with specified left/right padding, left-aligned */
+/* Left container: fixed width with left/right padding, left-aligned */
 .left-container {
   width: 800px;
   padding-left: 48px;
@@ -40,7 +40,7 @@ body {
   overflow: hidden;
 }
 
-/* Right containers group: auto width, 38px gap, 192px right padding */
+/* Right containers group: flex container with 38px gap and 192px right padding */
 .right-containers {
   display: flex;
   align-items: center;
@@ -55,25 +55,25 @@ body {
   white-space: nowrap;
 }
 
-/* Icon styling for right fields: force width to 50px and auto height */
+/* Icon styling for right fields: force width to 50px, height auto to maintain aspect ratio */
 .icon {
   width: 50px;
   height: auto;
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
-  margin-right: 10px; /* gap between icon and text */
+  margin-right: 10px;
 }
 
-/* Specific icon images (using relative path "icons/filename.png" because icons are in the same folder as index.html) */
+/* Specific icon images – since icons are in Banner_1/icons, use relative path "icons/filename.png" */
 .icon-guest {
-  background-image: url('icons/guestCount.png');
+  background-image: url("icons/guestCount.png");
 }
 .icon-departure {
-  background-image: url('icons/departureTime.png');
+  background-image: url("icons/departureTime.png");
 }
 .icon-end {
-  background-image: url('icons/endTime.png');
+  background-image: url("icons/endTime.png");
 }
 
 /* Field text styling */
