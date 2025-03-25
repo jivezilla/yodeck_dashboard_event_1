@@ -7,7 +7,7 @@
   box-sizing: border-box;
 }
 
-/* Center the dashboard container on the page */
+/* Page background & full viewport height */
 body {
   background: #C77B29;
   color: #fff;
@@ -19,7 +19,7 @@ body {
   margin: 0;
 }
 
-/* Dashboard container: fixed at 1776px wide and 90px high */
+/* Dashboard container: fixed at 1776px wide, 90px high */
 .dashboard-container {
   width: 1776px;
   height: 90px;
@@ -28,19 +28,19 @@ body {
   align-items: center;
 }
 
-/* Left container: fixed width with left/right padding, left-aligned */
+/* Left container: combined event name + venue */
 .left-container {
   width: 800px;
   padding-left: 48px;
   padding-right: 38px;
   text-align: left;
   font-weight: bold;
-  font-size: clamp(10px, 3vw, 50px) !important;
+  font-size: clamp(10px, 3vw, 50px) !important; 
   white-space: nowrap;
   overflow: hidden;
 }
 
-/* Right containers group: flex container with 38px gap and 192px right padding */
+/* Right containers group: flex, 38px gap, 192px right padding */
 .right-containers {
   display: flex;
   align-items: center;
@@ -55,17 +55,17 @@ body {
   white-space: nowrap;
 }
 
-/* Icon styling for right fields: force width to 50px, height auto to maintain aspect ratio */
+/* Icon styling for right fields: 50px wide, maintain aspect ratio */
 .icon {
   width: 50px;
   height: auto;
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
-  margin-right: 10px;
+  margin-right: 10px; /* gap between icon and text */
 }
 
-/* Specific icon images – since icons are in Banner_1/icons, use relative path "icons/filename.png" */
+/* Specific icon images (assuming icons are in Banner_1/icons/) */
 .icon-guest {
   background-image: url("icons/guestCount.png");
 }
@@ -76,7 +76,7 @@ body {
   background-image: url("icons/endTime.png");
 }
 
-/* Field text styling */
+/* Right field text styling */
 .field span {
   font-size: 50px;
   text-align: right;
