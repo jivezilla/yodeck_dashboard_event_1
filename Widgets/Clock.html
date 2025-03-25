@@ -11,25 +11,63 @@
     body {
       width: 370px;
       height: 190px;
-      background-color: rgba(133, 172, 64, 0.75); /* 75% opacity */
+      background-color: rgba(133, 172, 64, 0.75); /* #85ac40 with 75% opacity */
       display: flex;
       align-items: center;
       justify-content: center;
     }
     .date-time {
       color: #ffffff;
-      font-family: "Instrument Serif", serif;
+      font-family: "Instrument Serif", serif; /* If this is a custom font, make sure it's loaded */
       font-size: 60px;
       text-align: right;
-      line-height: 1.2; /* Adjust spacing a bit if desired */
+      line-height: 1.2; /* Adjust if needed */
     }
   </style>
 </head>
 <body>
-  <div class="date-time">
-    Thurs<br>
-    3/25/25<br>
-    10:07 AM
-  </div>
+  <div class="date-time"></div>
+
+  <script>
+    function updateClock() {
+      // Arrays for day/month names. Adjust as you like.
+      const days = ["Sun", "Mon", "Tues", "Wed", "Thurs", "Fri", "Sat"];
+      const now = new Date();
+
+      const dayOfWeek = days[now.getDay()];
+      const month = now.getMonth() + 1;        // JS months are 0-based
+      const day = now.getDate();
+      const year = now.getFullYear().toString().slice(-2); // Last two digits of year
+
+      let hour = now.getHours();
+      let minute = now.getMinutes();
+      let ampm = "AM";
+
+      if (hour === 0) {
+        hour = 12;
+      } else if (hour > 12) {
+        hour -= 12;
+        ampm = "PM";
+      }
+
+      // Ensure minute has leading zero if < 10
+      if (minute < 10) {
+        minute = "0" + minute;
+      }
+
+      // Build the string in the format you wanted
+      const timeString = `
+        ${dayOfWeek}<br>
+        ${month}/${day}/${year}<br>
+        ${hour}:${minute} ${ampm}
+      `;
+
+      document.querySelector(".date-time").innerHTML = timeString.trim();
+    }
+
+    // Update the clock once now, then every second
+    updateClock();
+    setInterval(updateClock, 1000);
+  </script>
 </body>
 </html>
