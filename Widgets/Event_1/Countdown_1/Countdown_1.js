@@ -28,7 +28,7 @@ function updateCountdown() {
 
   // Display
   document.getElementById("countdownDisplay").textContent =
-    `${hours}h ${minutes}m ${seconds}s left`;
+    `${hours}h ${minutes}m ${seconds}s`;
 }
 
 // Immediately call it once so there's no 1-second delay to show anything
