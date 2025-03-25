@@ -30,7 +30,7 @@ function parseCSV(csvText) {
 
   for (let i = 0; i < csvText.length; i++) {
     const char = csvText[i];
-    if (char === '"' && csvText[i + 1] === '"') { 
+    if (char === '"' && csvText[i + 1] === '"') {
       cell += '"';
       i++;
     } else if (char === '"') {
@@ -47,11 +47,11 @@ function parseCSV(csvText) {
       cell += char;
     }
   }
-  
+
   if (row.length > 0) {
     rows.push(row);
   }
-  
+
   const headers = rows[0];
   return rows.slice(1).map(row => {
     let obj = {};
@@ -182,20 +182,30 @@ function calculateDepartureTime(eventStartTime, travelTimeStr, guestCount, baseB
 /**
  * Update the Departure Time display.
  * Displays just the time (e.g., "2:24 PM") with no prefix.
+ * Also sets window.departureTime for external reference (e.g., in Countdown_1).
  */
 function updateDepartureTimeDisplay(eventData) {
   const eventStartTime = determineEventStartTime(eventData);
   if (!eventStartTime) {
     console.error("No valid event start time found.");
+    // If invalid, set departureTime to null so external scripts know
+    window.departureTime = null;
     return;
   }
+
   const travelTime = localStorage.getItem("eventETA");
   if (!travelTime) {
     console.error("No travel time available.");
+    window.departureTime = null;
     return;
   }
+
   const guestCount = parseInt(eventData["Guest Count"], 10) || 0;
   const departureTime = calculateDepartureTime(eventStartTime, travelTime, guestCount, 5);
+
+  // >>> This is the key line that sets a global variable for the Countdown widget <<<
+  window.departureTime = departureTime;
+
   const formattedDepartureTime = departureTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
   document.getElementById("departureTimeValue").textContent = formattedDepartureTime;
 }
