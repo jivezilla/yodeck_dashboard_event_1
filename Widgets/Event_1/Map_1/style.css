@@ -14,7 +14,7 @@ body {
   color: #fff;
   font-family: "Instrument Serif", serif;
   margin: auto;
-  position: center;
+  position: relative;
 }
 
 /* ETA heading */
