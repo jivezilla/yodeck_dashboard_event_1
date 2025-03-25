@@ -71,13 +71,13 @@ body {
    use "../icons/filename.png". Adjust if needed.
 */
 .icon-guest {
-  background-image: url('../icons/guestCount.png');
+  background-image: url('Widgets/Event_1/Banner_1/icons/guestCount.png');
 }
 .icon-departure {
-  background-image: url('../icons/departureTime.png');
+  background-image: url('Widgets/Event_1/Banner_1/icons/departureTime.png');
 }
 .icon-end {
-  background-image: url('../icons/endTime.png');
+  background-image: url('Widgets/Event_1/Banner_1/icons/endTime.png');
 }
 
 /* Field text styling */
