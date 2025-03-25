@@ -2,21 +2,20 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Countdown_1 Widget</title>
+  <title>Countdown Widget</title>
   <style>
     body {
-      margin: 0;
-      padding: 0;
-      font-family: Arial, sans-serif;
       background: #222;
       color: #fff;
+      font-family: Arial, sans-serif;
       display: flex;
       align-items: center;
       justify-content: center;
       height: 100vh;
+      margin: 0;
     }
     #countdownDisplay {
-      font-size: 2rem;
+      font-size: 3rem;
     }
   </style>
 </head>
@@ -24,9 +23,17 @@
 
   <div id="countdownDisplay">Waiting...</div>
 
-  <!-- Important: Banner_1.js must be included or loaded *before* countdown_1.js,
-       so that window.departureTime is available. -->
-  <script src="script.js"></script>
-  <script src="countdown_1.js"></script>
+  <!-- 
+    1) Load Banner_1/script.js (the one that sets window.departureTime)
+       Notice the relative path: we go UP one directory (..) into Event_1,
+       then into Banner_1, then reference script.js
+  -->
+  <script src="../Banner_1/script.js"></script>
+
+  <!--
+    2) Load the countdown script in the same folder
+  -->
+  <script src="Countdown_1.js"></script>
+
 </body>
 </html>
