@@ -202,9 +202,6 @@ async function init() {
   updateEta();
 }
 
-/**
- * Update the ETA element using the Routes API.
- */
 function updateEta() {
   const etaEl = document.getElementById("eta");
   if (!etaEl) return;
@@ -226,7 +223,7 @@ function updateEta() {
         }
         getTravelTime(originCoords, destCoords)
           .then(function(travelTime) {
-            // Use the correct path for the travel time icon (in the same folder as index.html)
+            // Use correct path for travel time icon (relative to Banner_1 folder)
             etaEl.innerHTML = '<div class="eta-container">' +
                               '<img src="icons/travelTimeicon.png" class="eta-icon" alt="ETA Icon">' +
                               '<span class="eta-text">' + travelTime + '</span>' +
