@@ -91,18 +91,31 @@ function findTodayRow(rows) {
  *****************************************************/
 
 function renderData(eventData) {
-  // Combine Event Name and Venue Name as "[Event Name] | [Venue Name]"
   const combinedName = (eventData["Event Name"] || "(No event name)") +
                        " | " + (eventData["Venue Name"] || "(No venue)");
   const guestCount = eventData["Guest Count"] || "0";
   let endTime = eventData["Event Conclusion/Breakdown Time"] || "TBD";
+
   if (endTime !== "TBD") {
     // Remove seconds from end time (e.g., "9:30:00 PM" -> "9:30 PM")
     endTime = endTime.replace(/:00(\s*[AP]M)/i, "$1");
   }
-  document.getElementById("eventNameValue").textContent = combinedName;
-  document.getElementById("guestCountValue").textContent = guestCount;
-  document.getElementById("endTimeValue").textContent = endTime;
+
+  // Safely get each element and only set textContent if it exists
+  const eventNameEl = document.getElementById("eventNameValue");
+  if (eventNameEl) {
+    eventNameEl.textContent = combinedName;
+  }
+
+  const guestCountEl = document.getElementById("guestCountValue");
+  if (guestCountEl) {
+    guestCountEl.textContent = guestCount;
+  }
+
+  const endTimeEl = document.getElementById("endTimeValue");
+  if (endTimeEl) {
+    endTimeEl.textContent = endTime;
+  }
 }
 
 /*****************************************************
@@ -124,23 +137,37 @@ function determineEventStartTime(row) {
       return dt;
     }
   }
+
   const candidates = [];
   if (row["Meal Service Start Time"]?.trim()) {
-    candidates.push({ time: new Date(getTodayInMDYYYY() + " " + row["Meal Service Start Time"].trim()), source: "Meal Service Start Time" });
+    candidates.push({
+      time: new Date(getTodayInMDYYYY() + " " + row["Meal Service Start Time"].trim()),
+      source: "Meal Service Start Time"
+    });
   }
   if (row["Cocktail Hour Start Time"]?.trim()) {
-    candidates.push({ time: new Date(getTodayInMDYYYY() + " " + row["Cocktail Hour Start Time"].trim()), source: "Cocktail Hour Start Time" });
+    candidates.push({
+      time: new Date(getTodayInMDYYYY() + " " + row["Cocktail Hour Start Time"].trim()),
+      source: "Cocktail Hour Start Time"
+    });
   }
   if (row["Passed Hors D'oeuvres Time Start"]?.trim()) {
-    candidates.push({ time: new Date(getTodayInMDYYYY() + " " + row["Passed Hors D'oeuvres Time Start"].trim()), source: "Passed Hors D'oeuvres Time Start" });
+    candidates.push({
+      time: new Date(getTodayInMDYYYY() + " " + row["Passed Hors D'oeuvres Time Start"].trim()),
+      source: "Passed Hors D'oeuvres Time Start"
+    });
   }
+
   if (candidates.length === 0) {
     return null;
   }
+
   candidates.sort((a, b) => a.time - b.time);
-  if (candidates[0].source === "Cocktail Hour Start Time" &&
-      row["Passed Hors D'oeuvres"] &&
-      row["Passed Hors D'oeuvres"].toLowerCase() === "yes") {
+  if (
+    candidates[0].source === "Cocktail Hour Start Time" &&
+    row["Passed Hors D'oeuvres"] &&
+    row["Passed Hors D'oeuvres"].toLowerCase() === "yes"
+  ) {
     return candidates[0].time;
   }
   return candidates[0].time;
@@ -182,13 +209,12 @@ function calculateDepartureTime(eventStartTime, travelTimeStr, guestCount, baseB
 /**
  * Update the Departure Time display.
  * Displays just the time (e.g., "2:24 PM") with no prefix.
- * Also sets window.departureTime for external reference (e.g., in Countdown_1).
+ * Also sets window.departureTime for external reference (e.g., Countdown_1).
  */
 function updateDepartureTimeDisplay(eventData) {
   const eventStartTime = determineEventStartTime(eventData);
   if (!eventStartTime) {
     console.error("No valid event start time found.");
-    // If invalid, set departureTime to null so external scripts know
     window.departureTime = null;
     return;
   }
@@ -203,11 +229,18 @@ function updateDepartureTimeDisplay(eventData) {
   const guestCount = parseInt(eventData["Guest Count"], 10) || 0;
   const departureTime = calculateDepartureTime(eventStartTime, travelTime, guestCount, 5);
 
-  // >>> This is the key line that sets a global variable for the Countdown widget <<<
+  // Expose to other scripts
   window.departureTime = departureTime;
 
-  const formattedDepartureTime = departureTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-  document.getElementById("departureTimeValue").textContent = formattedDepartureTime;
+  // Update #departureTimeValue if it exists on this page
+  const departureTimeEl = document.getElementById("departureTimeValue");
+  if (departureTimeEl) {
+    const formattedDepartureTime = departureTime.toLocaleTimeString([], {
+      hour: 'numeric',
+      minute: '2-digit'
+    });
+    departureTimeEl.textContent = formattedDepartureTime;
+  }
 }
 
 /*****************************************************
@@ -227,6 +260,8 @@ async function init() {
     return;
   }
 
+  // If the relevant DOM elements aren't on this page,
+  // 'renderData' won't crash thanks to the if-checks above.
   renderData(todayRow);
   updateDepartureTimeDisplay(todayRow);
 
