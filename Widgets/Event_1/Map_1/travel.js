@@ -1,7 +1,7 @@
 console.log("Map_1 travel.js is running!");
 
 // -------------------
-// 1) Firebase init
+// 1) Firebase Initialization (Compat)
 // -------------------
   const firebaseConfig = {
       apiKey: "AIzaSyAI25Nnbddli39RgU5482o7QPVavIFLfUs",
@@ -15,86 +15,69 @@ console.log("Map_1 travel.js is running!");
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// Where do we store travelTime in Firestore? => /Event_1/Main => field: eventETA
+// -------------------
+// 2) Firestore helper: Save travelTime (eventETA)
+// -------------------
 async function saveTravelTimeToFirestore(timeStr) {
   if (!timeStr) return;
   try {
     await db.collection("Event_1").doc("Main").set(
       { eventETA: timeStr },
-      { merge: true } // so we don't overwrite other fields
+      { merge: true }
     );
-    console.log("Wrote eventETA to Firestore:", timeStr);
+    console.log("Saved eventETA to Firestore:", timeStr);
   } catch (err) {
-    console.error("Error writing eventETA to Firestore:", err);
+    console.error("Error saving eventETA to Firestore:", err);
   }
 }
 
 // -------------------
-// 2) Original code
+// 3) Original travel.js code
 // -------------------
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSOJpWzhoSZ2zgH1l9DcW3gc4RsbTsRqsSCTpGuHcOAfESVohlucF8QaJ6u58wQE0UilF7ChQXhbckE/pub?output=csv";
-const GOOGLE_API_KEY = "AIzaSyB4b4Ho4rNwF9hyPKCYFYXNU6dXI550M6U";
 const ORIGIN_ADDRESS = "221 Corley Mill Rd, Lexington, SC 29072";
+// GOOGLE_API_KEY is already defined in the URL of the Maps API above.
 
-/*********************
- * Helper Functions
- *********************/
-async function fetchCSV() { ... } // same parseCSV, findTodayRow, etc. from your code
+// (Include your helper functions: fetchCSV, parseCSV, getTodayInMDYYYY, findTodayRow, geocodeClientSide, formatDuration, getTravelTime)
+// For brevity, I assume these functions remain unchanged from your provided travel.js code.
 
-function getTodayInMDYYYY() { ... }
-
-function findTodayRow(rows) { ... }
-
-function geocodeClientSide(address) { ... }
-
-function formatDuration(durationStr) { ... }
-
-function getTravelTime(originCoords, destCoords) { ... }
-
-/**
- * Instead of localStorage.setItem("eventETA", travelTime),
- * we call saveTravelTimeToFirestore(travelTime).
- */
+// -------------------
+// 4) Update ETA and Map, now saving travelTime to Firestore instead of localStorage
+// -------------------
 function updateEtaAndMap(eventData) {
   const etaEl = document.getElementById("eta");
   const mapEl = document.getElementById("mapFrame");
   if (!etaEl || !mapEl) return;
-
   const destAddress = eventData["Address"] + ", " +
                       eventData["City"] + ", " +
                       eventData["State"] + " " +
                       eventData["Zipcode"];
 
-  // geocode both origin & dest
   Promise.all([
     geocodeClientSide(ORIGIN_ADDRESS),
     geocodeClientSide(destAddress)
-  ]).then(([originCoords, destCoords]) => {
+  ]).then(function(coordsArray) {
+    const originCoords = coordsArray[0];
+    const destCoords = coordsArray[1];
     if (!originCoords || !destCoords) {
       etaEl.textContent = "Address not found";
       mapEl.src = "";
       return;
     }
-
-    // get travelTime from routes API
     getTravelTime(originCoords, destCoords)
-      .then(travelTime => {
-        // show on page
-        etaEl.innerHTML = `
-          <div class="eta-container">
-            <img src="icons/travelTimeicon.png" class="eta-icon" alt="ETA Icon">
-            <span class="eta-text">${travelTime}</span>
-          </div>
-        `;
-        // *** Save to Firestore instead of localStorage ***
+      .then(function(travelTime) {
+        etaEl.innerHTML = '<div class="eta-container">' +
+                          '<img src="icons/travelTimeicon.png" class="eta-icon" alt="ETA Icon">' +
+                          '<span class="eta-text">' + travelTime + '</span>' +
+                          '</div>';
+        // Save travelTime (eventETA) to Firestore
         saveTravelTimeToFirestore(travelTime);
       })
-      .catch(err => {
-        etaEl.textContent = err;
+      .catch(function(error) {
+        etaEl.textContent = error;
       });
-
-    // also set the map iframe
-    const googleMapsEmbedURL = "https://www.google.com/maps/embed/v1/directions?key=" + GOOGLE_API_KEY +
+    const googleMapsEmbedURL = "https://www.google.com/maps/embed/v1/directions?key=" +
+                               GOOGLE_API_KEY +
                                "&origin=" + encodeURIComponent(ORIGIN_ADDRESS) +
                                "&destination=" + encodeURIComponent(destAddress) +
                                "&mode=driving";
@@ -102,9 +85,9 @@ function updateEtaAndMap(eventData) {
   });
 }
 
-/**
- * init() fetches CSV, finds today's row, calls updateEtaAndMap, etc.
- */
+// -------------------
+// 5) Main init function for Map_1
+// -------------------
 async function init() {
   console.log("Initializing Map_1...");
   const csvText = await fetchCSV();
@@ -115,10 +98,8 @@ async function init() {
     return;
   }
   updateEtaAndMap(todayRow);
-
-  // If you want to refresh every 30s:
-  setInterval(async () => {
-    console.log("Refreshing data...");
+  setInterval(async function() {
+    console.log("Refreshing Map_1 data...");
     const newCSV = await fetchCSV();
     const newRows = parseCSV(newCSV);
     const newTodayRow = findTodayRow(newRows);
@@ -130,5 +111,7 @@ async function init() {
   }, 30000);
 }
 
-// Expose initMap for the Google Maps callback
+// -------------------
+// 6) Expose initMap globally for Google Maps callback
+// -------------------
 window.initMap = init;
