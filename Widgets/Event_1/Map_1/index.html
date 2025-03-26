@@ -5,17 +5,15 @@
   <title>Event Travel & ETA Dashboard - Map</title>
   <link rel="stylesheet" href="style.css">
 
-  <!-- (1) Firebase “compat” scripts -->
+  <!-- Load Firebase compat scripts -->
   <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-firestore-compat.js"></script>
 
-  <!-- (2) Your travel.js (the main logic) -->
+  <!-- Load your travel.js -->
   <script src="travel.js"></script>
 
-  <!-- (3) Google Maps JS with callback -->
-  <script async defer 
-    src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_KEY&callback=initMap">
-  </script>
+  <!-- Load Google Maps API with your actual key and async defer -->
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB4b4Ho4rNwF9hyPKCYFYXNU6dXI550M6U&callback=initMap"></script>
 </head>
 <body>
   <h2 id="eta">Loading Travel Time...</h2>
