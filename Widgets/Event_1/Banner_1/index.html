@@ -2,50 +2,110 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SHC Event Dashboard</title>
-  
-  <!-- Google Font -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:wght@400;700&display=swap" rel="stylesheet">
-  
-  <!-- Link to external CSS -->
-  <link rel="stylesheet" href="style.css">
+  <title>Banner_1 - Firestore Example</title>
+
+  <!-- 1) Firebase Core & Firestore (namespaced) -->
+  <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-firestore.js"></script>
+
+  <script>
+    /**************************************************************
+     * Step A: Initialize Firebase w/ your config
+     **************************************************************/
+    const firebaseConfig = {
+      apiKey: "AIzaSyAI25Nnbddli39RgU5482o7QPVavIFLfUs",
+      authDomain: "shc-yodeck-dashboard.firebaseapp.com",
+      projectId: "shc-yodeck-dashboard",
+      storageBucket: "shc-yodeck-dashboard.appspot.com",
+      messagingSenderId: "75263286816",
+      appId: "1:75263286816:web:b22b0d1853e3daee68e645",
+      measurementId: "G-07BS7GD6DK"
+    };
+
+    // Initialize the "namespaced" Firebase
+    firebase.initializeApp(firebaseConfig);
+
+    // Access Firestore
+    const db = firebase.firestore();
+
+    /**************************************************************
+     * Step B: Example function to store departureTime in Firestore
+     *         writing to /Event_1/Main (doc ID "Main")
+     **************************************************************/
+    async function saveDepartureTimeToFirestore(dateObj) {
+      if (!dateObj) {
+        console.error("No dateObj provided to saveDepartureTimeToFirestore");
+        return;
+      }
+      const isoString = dateObj.toISOString();
+
+      // doc("/Event_1/Main")
+      try {
+        await db.collection("Event_1").doc("Main").set({
+          departureTime: isoString
+        });
+        console.log("Wrote departureTime to /Event_1/Main:", isoString);
+      } catch (err) {
+        console.error("Error writing to Firestore:", err);
+      }
+    }
+
+    /**************************************************************
+     * Step C: Example function to read from /Event_1/Main
+     *         Might not be needed in Banner_1, but you can do it if
+     *         you want to confirm data's written, or show it.
+     **************************************************************/
+    async function readDepartureTime() {
+      try {
+        const docRef = db.collection("Event_1").doc("Main");
+        const snapshot = await docRef.get();
+        if (!snapshot.exists) {
+          console.warn("No document found at /Event_1/Main");
+          return null;
+        }
+        const data = snapshot.data();
+        console.log("Read from Firestore:", data);
+        // data.departureTime is the ISO string if it was set
+        return data;
+      } catch (err) {
+        console.error("Error reading from Firestore:", err);
+        return null;
+      }
+    }
+
+    /**************************************************************
+     * Step D: EXAMPLE: This simulates Banner_1 logic
+     *         We'll "calculate" a test departureTime (30 min from now),
+     *         then we save it to Firestore.
+     **************************************************************/
+    async function calculateAndSaveDepartureTime() {
+      // Fake: 30 minutes from now
+      const now = new Date();
+      const future = new Date(now.getTime() + 30 * 60 * 1000);
+      // Save to Firestore
+      await saveDepartureTimeToFirestore(future);
+
+      // Optionally read it back to confirm
+      const docData = await readDepartureTime();
+      if (docData && docData.departureTime) {
+        document.getElementById("departureTimeValue").textContent = 
+          `Departure (from Firestore): ${docData.departureTime}`;
+      } else {
+        document.getElementById("departureTimeValue").textContent = "No departureTime in Firestore yet.";
+      }
+    }
+  </script>
 </head>
-<body>
-  <div class="dashboard-container">
-    <!-- Left container: [Event Name] | [Venue Name] -->
-    <div class="left-container">
-      <span id="eventNameValue">Loading...</span>
-    </div>
-    
-    <!-- Right containers group -->
-    <div class="right-containers">
-      <!-- Guest Count -->
-      <div class="field">
-        <div class="icon icon-guest"></div>
-        <span id="guestCountValue">Loading...</span>
-      </div>
-      <!-- Departure Time -->
-      <div class="field">
-        <div class="icon icon-departure"></div>
-        <span id="departureTimeValue">Loading...</span>
-      </div>
-      <!-- End Time -->
-      <div class="field">
-        <div class="icon icon-end"></div>
-        <span id="endTimeValue">Loading...</span>
-      </div>
+<body style="background: #222; color: #fff; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh;">
+
+  <div>
+    <h1>Banner_1 Firestore Demo</h1>
+    <p>This simulates writing a departureTime to Firestore at /Event_1/Main.</p>
+    <button onclick="calculateAndSaveDepartureTime()">Calculate & Save departureTime</button>
+    <div id="departureTimeValue" style="margin-top: 1em; font-size: 1.2em;">
+      (Click the button to set a time.)
     </div>
   </div>
-  
-  <!-- Error logging -->
-  <script>
-    window.addEventListener("error", function(event) {
-      console.error("JavaScript Error:", event.message);
-    });
-  </script>
-  <script src="script.js"></script>
+
 </body>
 </html>
