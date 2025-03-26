@@ -35,8 +35,8 @@ async function saveTravelTimeToFirestore(timeStr) {
 // 3) Original travel.js code
 // -------------------
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSOJpWzhoSZ2zgH1l9DcW3gc4RsbTsRqsSCTpGuHcOAfESVohlucF8QaJ6u58wQE0UilF7ChQXhbckE/pub?output=csv";
+const GOOGLE_API_KEY = "AIzaSyDSjcIsQxjIkd9ReFTxiCcS7_JHhSMQmXY";
 const ORIGIN_ADDRESS = "221 Corley Mill Rd, Lexington, SC 29072";
-// GOOGLE_API_KEY is already defined in the URL of the Maps API above.
 
 // (Include your helper functions: fetchCSV, parseCSV, getTodayInMDYYYY, findTodayRow, geocodeClientSide, formatDuration, getTravelTime)
 // For brevity, I assume these functions remain unchanged from your provided travel.js code.
