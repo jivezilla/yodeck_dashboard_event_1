@@ -2,37 +2,50 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>SHC Event Dashboard - Banner_1</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SHC Event Dashboard</title>
   
-  <!-- Google Font or anything else you want -->
+  <!-- Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:wght@400;700&display=swap" rel="stylesheet">
+  
+  <!-- Link to external CSS -->
   <link rel="stylesheet" href="style.css">
-
-  <!-- (1) Firebase compat scripts -->
-  <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-firestore-compat.js"></script>
-
-  <!-- (2) Your script.js (Banner logic) -->
-  <script src="script.js"></script>
 </head>
 <body>
   <div class="dashboard-container">
+    <!-- Left container: [Event Name] | [Venue Name] -->
     <div class="left-container">
       <span id="eventNameValue">Loading...</span>
     </div>
+    
+    <!-- Right containers group -->
     <div class="right-containers">
+      <!-- Guest Count -->
       <div class="field">
         <div class="icon icon-guest"></div>
         <span id="guestCountValue">Loading...</span>
       </div>
+      <!-- Departure Time -->
       <div class="field">
         <div class="icon icon-departure"></div>
         <span id="departureTimeValue">Loading...</span>
       </div>
+      <!-- End Time -->
       <div class="field">
         <div class="icon icon-end"></div>
         <span id="endTimeValue">Loading...</span>
       </div>
     </div>
   </div>
+  
+  <!-- Error logging -->
+  <script>
+    window.addEventListener("error", function(event) {
+      console.error("JavaScript Error:", event.message);
+    });
+  </script>
+  <script src="script.js"></script>
 </body>
 </html>
