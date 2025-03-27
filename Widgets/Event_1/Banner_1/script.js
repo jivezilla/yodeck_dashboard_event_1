@@ -230,17 +230,30 @@ function updateDepartureTimeDisplay(eventData) {
   const departureTime = calculateDepartureTime(eventStartTime, travelTime, guestCount, 5);
 
   // Expose to other scripts
-  window.departureTime = departureTime;
+window.departureTime = departureTime;
 
-  // Update #departureTimeValue if it exists on this page
-  const departureTimeEl = document.getElementById("departureTimeValue");
-  if (departureTimeEl) {
-    const formattedDepartureTime = departureTime.toLocaleTimeString([], {
-      hour: 'numeric',
-      minute: '2-digit'
-    });
-    departureTimeEl.textContent = formattedDepartureTime;
-  }
+// Update #departureTimeValue if it exists on this page
+const departureTimeEl = document.getElementById("departureTimeValue");
+if (departureTimeEl) {
+  const formattedDepartureTime = departureTime.toLocaleTimeString([], {
+    hour: 'numeric',
+    minute: '2-digit'
+  });
+  departureTimeEl.textContent = formattedDepartureTime;
+
+  // Push to Firebase (Realtime Database)
+  firebase.database().ref('Event_1').set({
+    departureTime: departureTime.toISOString(),
+    formattedDepartureTime: formattedDepartureTime,
+    eventName: eventData["Event Name"],
+    venueName: eventData["Venue Name"],
+    guestCount: eventData["Guest Count"],
+    endTime: eventData["Event Conclusion/Breakdown Time"],
+    travelTime: localStorage.getItem("eventETA") || "Not Set"
+  })
+  .then(() => console.log("Firebase update successful"))
+  .catch((error) => console.error("Firebase update error:", error));
+}
 }
 
 /*****************************************************
